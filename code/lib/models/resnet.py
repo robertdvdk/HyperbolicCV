@@ -40,7 +40,6 @@ class ResNet(nn.Module):
         self.block = block
 
         self.manifold = manifold
-
         self.conv1 = self._get_inConv()
         self.conv2_x = self._make_layer(block, out_channels=self.in_channels, num_blocks=num_blocks[0], stride=1)
         self.conv3_x = self._make_layer(block, out_channels=self.conv3_dim, num_blocks=num_blocks[1], stride=2)

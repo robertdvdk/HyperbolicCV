@@ -2,7 +2,6 @@
 # Change working directory to parent HyperbolicCV/code
 import os
 import sys
-import wandb
 working_dir = os.path.join(os.path.realpath(os.path.dirname(__file__)), "../")
 os.chdir(working_dir)
 
@@ -22,8 +21,6 @@ import numpy as np
 from utils.initialize import select_dataset, select_model, select_optimizer, load_checkpoint
 from lib.utils.utils import AverageMeter, accuracy
 
-wandb.login()
-project = "ICML_Hyperbolic"
 
 def getArguments():
     """ Parses command-line options. """
@@ -134,115 +131,18 @@ def main(args):
         print("Loading model checkpoint from {}".format(args.load_checkpoint))
         model, optimizer, lr_scheduler, start_epoch = load_checkpoint(model, optimizer, lr_scheduler, args)
 
-    model = DataParallel(model, device_ids=args.device)
+    # for n, p in model.named_parameters():
+    #     if n.startswith('encoder.conv1.conv.0.linearized_kernel.a'):
+    #         print(n, p.shape, p)
+    #         print((p != 0).sum())
+    #         print(p!=0)
 
-    if args.compile:
-        model = torch.compile(model)
-
-    print("Training...")
-    global_step = start_epoch * len(train_loader)
-
-    best_acc = 0.0
-    best_epoch = 0
-
-    with wandb.init(project=project, name=args.exp_name, config=vars(args)) as run:
-        for epoch in range(start_epoch, args.num_epochs):
-            model.train()
-
-            losses = AverageMeter("Loss", ":.4e")
-            acc1 = AverageMeter("Acc@1", ":6.2f")
-            acc5 = AverageMeter("Acc@5", ":6.2f")
-
-            for i, (x, y) in tqdm(enumerate(train_loader)):
-                # ------- Start iteration -------
-                x = x.to(device)
-                y = y.to(device)
-
-                logits = model(x)
-                loss = criterion(logits, y)
-
-                optimizer.zero_grad()
-                loss.backward()
-                optimizer.step()
-
-                with torch.no_grad():
-                    top1, top5 = accuracy(logits, y, topk=(1, 5))
-                    losses.update(loss.item())
-                    acc1.update(top1.item())
-                    acc5.update(top5.item())
-
-                global_step += 1
-                # ------- End iteration -------
-
-            # ------- Start validation and logging -------
-            with torch.no_grad():
-                if lr_scheduler is not None:
-                    if (epoch + 1) == args.lr_scheduler_milestones[0]:  # skip the first drop for some Parameters
-                        optimizer.param_groups[1]['lr'] *= (1 / args.lr_scheduler_gamma) # Manifold params
-                        print("Skipped lr drop for manifold parameters")
-
-                    lr_scheduler.step()
-
-                loss_val, acc1_val, acc5_val = evaluate(model, val_loader, criterion, device)
-
-                print(
-                    "Epoch {}/{}: Loss={:.4f}, Acc@1={:.4f}, Acc@5={:.4f}, Validation: Loss={:.4f}, Acc@1={:.4f}, Acc@5={:.4f}".format(
-                        epoch + 1, args.num_epochs, losses.avg, acc1.avg, acc5.avg, loss_val, acc1_val, acc5_val))
-
-                run.log({"train/acc@1": acc1.avg, "train/loss": losses.avg, "val/acc@1": acc1_val, "val/loss": loss_val})
-
-                # Testing for best model
-                if acc1_val > best_acc:
-                    best_acc = acc1_val
-                    best_epoch = epoch + 1
-                    if args.output_dir is not None:
-                        save_path = args.output_dir + "/best_" + args.exp_name + ".pth"
-                        torch.save({
-                            'model': model.module.state_dict(),
-                            'optimizer': optimizer.state_dict(),
-                            'lr_scheduler': lr_scheduler.state_dict() if lr_scheduler is not None else None,
-                            'epoch': epoch,
-                            'args': args,
-                        }, save_path)
-            # ------- End validation and logging -------
-
-        print("-----------------\nTraining finished\n-----------------")
-        print("Best epoch = {}, with Acc@1={:.4f}".format(best_epoch, best_acc))
-
-        if args.output_dir is not None:
-            save_path = args.output_dir + "/final_" + args.exp_name + ".pth"
-            torch.save({
-                'model': model.module.state_dict(),
-                'optimizer': optimizer.state_dict(),
-                'lr_scheduler': lr_scheduler.state_dict() if lr_scheduler is not None else None,
-                'epoch': epoch,
-                'args': args,
-            }, save_path)
-            print("Model saved to " + save_path)
-        else:
-            print("Model not saved.")
-
-        print("Testing final model...")
-        loss_test, acc1_test, acc5_test = evaluate(model, test_loader, criterion, device)
-
-        print("Results: Loss={:.4f}, Acc@1={:.4f}, Acc@5={:.4f}".format(
-            loss_test, acc1_test, acc5_test))
-
-        print("Testing best model...")
-        if args.output_dir is not None:
-            print("Loading best model...")
-            save_path = args.output_dir + "/best_" + args.exp_name + ".pth"
-            checkpoint = torch.load(save_path, map_location=device)
-            model.module.load_state_dict(checkpoint['model'], strict=True)
-
-            loss_test, acc1_test, acc5_test = evaluate(model, test_loader, criterion, device)
-
-            print("Results: Loss={:.4f}, Acc@1={:.4f}, Acc@5={:.4f}".format(
-                loss_test, acc1_test, acc5_test))
-        else:
-            print("Best model not saved, because no output_dir given.")
+    x = next(iter(train_loader))
+    print(x[0].shape)
+    print(model(x[0].cuda()))
 
 
+    
 @torch.no_grad()
 def evaluate(model, dataloader, criterion, device):
     """ Evaluates model performance """

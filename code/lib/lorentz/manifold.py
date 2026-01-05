@@ -46,6 +46,19 @@ class CustomLorentz(Lorentz):
         z = self.transp0(x, z)
 
         return self.expmap(x, z)
+    
+    def projection_space_orthogonal(self, x):
+        """
+        Projects a point onto the Lorentz model orthogonally from the space dimensions.
+
+        Args:
+            x: Point in the Lorentz model dim [batch_size, dim]
+        Returns:
+            Projected point dim [batch_size, dim]
+        """
+        return torch.cat(
+            [torch.sqrt(1 / self.k + x.pow(2).sum(-1, keepdim=True)), x], dim=-1
+        )
 
     #################################################
     #       Reshaping operations

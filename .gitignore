@@ -14,3 +14,7 @@
 *.m
 *.gz
 *.html
+
+*.log
+*.wandb
+code/wandb/*

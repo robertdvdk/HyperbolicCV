@@ -132,10 +132,7 @@ class LorentzConv2d(nn.Module):
         self.reset_parameters()
 
     def reset_parameters(self):
-        stdv = math.sqrt(2.0 / ((self.in_channels-1) * self.kernel_size[0] * self.kernel_size[1]))
-        self.linearized_kernel.weight.weight.data.uniform_(-stdv, stdv)
-        if self.bias:
-            self.linearized_kernel.weight.bias.data.uniform_(-stdv, stdv)
+        pass
 
     def forward(self, x):
         """ x has to be in channel-last representation -> Shape = bs x H x W x C """
@@ -160,7 +157,7 @@ class LorentzConv2d(nn.Module):
         patches_space = patches_space.reshape(patches_space.shape[0], patches_space.shape[1], self.in_channels - 1, -1).transpose(-1, -2).reshape(patches_space.shape) # No need, but seems to improve runtime??
 
         patches_pre_kernel = torch.concat((patches_time_rescaled, patches_space), dim=-1)
-
+        
         out = self.linearized_kernel(patches_pre_kernel)
         out = out.view(bsz, h_out, w_out, self.out_channels)
 
