@@ -37,8 +37,8 @@ parameters:
   lr_scheduler:
     value: cosine
 
-  validation_split:
-    value: true  # Use proper train/val split
+  val_fraction:
+    value: 0.2  # Use proper train/val split
 
   # Seed for reproducibility
   seed:
