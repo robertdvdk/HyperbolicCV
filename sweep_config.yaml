@@ -34,8 +34,8 @@ parameters:
   embedding_dim:
     value: 512
 
-  use_lr_scheduler:
-    value: true
+  lr_scheduler:
+    value: cosine
 
   validation_split:
     value: true  # Use proper train/val split
@@ -46,7 +46,7 @@ parameters:
 
   # Reduced training for hyperparameter search
   num_epochs:
-    value: 50  # Instead of 200
+    value: 75  # Instead of 200
 
   batch_size:
     value: 128
@@ -58,7 +58,7 @@ parameters:
     value: False
   
   train_subset_fraction:
-    value: 0.5
+    value: 0.3
   
   clip_features:
     value: 1.0
@@ -66,31 +66,25 @@ parameters:
   warmup_epochs:
     value: 10
 
+  optimizer:
+    value: RiemannianSGD
+
+  encoder_k:
+    value: 1.0
+
+  decoder_k:
+    value: 1.0
+
   # Hyperparameters to search
 
   # Learning rate - log scale search
   lr:
     distribution: log_uniform_values
     min: 1e-3
-    max: 3e-1
+    max: 5e-1
 
   # Weight decay - log scale search
   weight_decay:
     distribution: log_uniform_values
     min: 1e-5
     max: 1e-2
-
-  # Optimizer
-  optimizer:
-    values: [RiemannianSGD, RiemannianAdam]
-
-  # Hyperbolic curvature parameters
-  encoder_k:
-    distribution: log_uniform_values
-    min: 1e-2
-    max: 2.0
-
-  decoder_k:
-    distribution: log_uniform_values
-    min: 1e-2
-    max: 2.0

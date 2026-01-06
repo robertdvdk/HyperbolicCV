@@ -74,14 +74,10 @@ def getArguments():
     parser.add_argument('--optimizer', default="RiemannianSGD", type=str,
                         choices=["RiemannianAdam", "RiemannianSGD", "Adam", "SGD"],
                         help="Optimizer for training.")
-    parser.add_argument('--use_lr_scheduler', type=str2bool, default=False,
-                        help="If learning rate should be reduced after step epochs using a LR scheduler.")
+    parser.add_argument('--lr_scheduler', type=str, choices=["step", "cosine"],
+                        help="Which scheduler to use. Either StepLR or Cosine Annealing.")
     parser.add_argument('--warmup_epochs', default=0, type=int,
                         help="Number of epochs for learning rate warmup.")
-    # parser.add_argument('--lr_scheduler_milestones', default=[60, 120, 160], type=int, nargs="+",
-    #                     help="Milestones of LR scheduler.")
-    # parser.add_argument('--lr_scheduler_gamma', default=0.2, type=float,
-    #                     help="Gamma parameter of LR scheduler.")
 
     # General validation/testing hyperparameters
     parser.add_argument('--batch_size_test', default=128, type=int,

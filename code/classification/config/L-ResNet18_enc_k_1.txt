@@ -13,10 +13,10 @@ seed = 1
 # General training hyperparameters
 num_epochs = 200
 batch_size = 128
-lr = 2e-2
+lr = 7e-3
 weight_decay = 5e-3
 optimizer = RiemannianSGD
-use_lr_scheduler = True
+lr_scheduler = cosine
 warmup_epochs = 10
 
 # General validation/testing hyperparameters

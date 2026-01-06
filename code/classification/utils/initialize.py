@@ -4,7 +4,7 @@ from torch.utils.data import DataLoader
 
 from lib.geoopt import ManifoldParameter
 from lib.geoopt.optim import RiemannianAdam, RiemannianSGD
-from torch.optim.lr_scheduler import LinearLR, CosineAnnealingLR, SequentialLR
+from torch.optim.lr_scheduler import LinearLR, CosineAnnealingLR, SequentialLR, MultiStepLR
 
 from models.classifier import ResNetClassifier
 
@@ -104,7 +104,7 @@ def select_optimizer(model, args):
         raise "Optimizer not found. Wrong optimizer in configuration... -> " + args.model
 
     lr_scheduler = None
-    if args.use_lr_scheduler:
+    if args.lr_scheduler == "cosine":
         if args.warmup_epochs > 0:
             warmup_scheduler = LinearLR(optimizer,
                                         start_factor = 0.01,
@@ -123,6 +123,10 @@ def select_optimizer(model, args):
                 T_max=args.num_epochs,
                 eta_min=0  # LR goes down to 0
             )
+    else:
+        lr_scheduler = MultiStepLR(
+            optimizer, milestones=[60, 120, 160], gamma=0.2
+        )
         
 
     return optimizer, lr_scheduler
