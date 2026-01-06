@@ -1,0 +1,23 @@
+  program: code/classification/train.py
+  method: random
+  metric:
+    name: val/acc@1
+    goal: maximize
+
+  parameters:
+    dataset:
+      value: CIFAR-10
+    encoder_manifold:
+      value: lorentz
+    decoder_manifold:
+      value: lorentz
+    num_epochs:
+      value: 3  # Just 3 epochs to test!
+    lr:
+      values: [0.01, 0.1]
+    encoder_k:
+      values: [1.0, 2.0]
+    validation_split:
+      value: true
+    train_subset_fraction:
+      value: 0.1

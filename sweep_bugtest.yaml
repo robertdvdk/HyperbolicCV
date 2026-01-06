@@ -1,0 +1,82 @@
+# W&B Sweep Configuration for Hyperbolic CV Hyperparameter Search
+# Usage: wandb sweep sweep_config.yaml
+
+program: code/classification/train.py
+method: grid  # Options: grid, random, bayes
+metric:
+  name: val/acc@1
+  goal: maximize
+
+# Early termination to save compute
+early_terminate:
+  type: hyperband
+  min_iter: 15        # Don't stop runs before epoch 15
+  eta: 2              # Fraction of runs to keep at each elimination
+  s: 3                # Number of rungs in the bracket
+
+parameters:
+  # Fixed parameters (don't search these)
+  dataset:
+    value: CIFAR-100
+
+  output_dir:
+    value: null
+
+  encoder_manifold:
+    value: lorentz
+
+  decoder_manifold:
+    value: lorentz
+
+  num_layers:
+    value: 18
+
+  embedding_dim:
+    value: 512
+
+  use_lr_scheduler:
+    value: true
+
+  val_fraction:
+    value: 0.1  # Use proper train/val split
+
+  # Seed for reproducibility
+  seed:
+    value: 1
+
+  # Reduced training for hyperparameter search
+  num_epochs:
+    value: 50  # Instead of 200
+
+  batch_size:
+    value: 128
+
+  batch_size_test:
+    value: 128
+
+  learn_k:
+    value: False
+  
+  train_subset_fraction:
+    value: 0.5
+  
+  clip_features:
+    value: 1.0
+
+  warmup_epochs:
+    value: 10
+
+  lr:
+    value: 2e-2
+  
+  weight_decay:
+    value: 5e-3
+
+  optimizer:
+    value: RiemannianSGD
+
+  encoder_k:
+    value: 0.75
+  
+  decoder_k:
+    value: 1.0

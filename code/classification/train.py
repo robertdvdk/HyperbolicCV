@@ -25,6 +25,17 @@ from lib.utils.utils import AverageMeter, accuracy
 wandb.login()
 project = "ICML_Hyperbolic"
 
+def str2bool(v):
+    """Convert string to boolean for argparse - needed for W&B sweeps"""
+    if isinstance(v, bool):
+        return v
+    if str(v).lower() in ('yes', 'true', 't', 'y', '1'):
+        return True
+    elif str(v).lower() in ('no', 'false', 'f', 'n', '0'):
+        return False
+    else:
+        raise ValueError(f'Boolean value expected, got: {v}')
+
 def getArguments():
     """ Parses command-line options. """
     parser = configargparse.ArgumentParser(description='Image classification training', add_help=True)
@@ -48,7 +59,7 @@ def getArguments():
                         help="Set seed for deterministic training.")
     parser.add_argument('--load_checkpoint', default=None, type=str,
                         help="Path to model checkpoint (weights, optimizer, epoch).")
-    parser.add_argument('--compile', action='store_true',
+    parser.add_argument('--compile', type=str2bool, default=False,
                         help="Compile model for faster inference (requires PyTorch 2).")
 
     # General training parameters
@@ -63,12 +74,14 @@ def getArguments():
     parser.add_argument('--optimizer', default="RiemannianSGD", type=str,
                         choices=["RiemannianAdam", "RiemannianSGD", "Adam", "SGD"],
                         help="Optimizer for training.")
-    parser.add_argument('--use_lr_scheduler', action='store_true',
+    parser.add_argument('--use_lr_scheduler', type=str2bool, default=False,
                         help="If learning rate should be reduced after step epochs using a LR scheduler.")
-    parser.add_argument('--lr_scheduler_milestones', default=[60, 120, 160], type=int, nargs="+",
-                        help="Milestones of LR scheduler.")
-    parser.add_argument('--lr_scheduler_gamma', default=0.2, type=float,
-                        help="Gamma parameter of LR scheduler.")
+    parser.add_argument('--warmup_epochs', default=0, type=int,
+                        help="Number of epochs for learning rate warmup.")
+    # parser.add_argument('--lr_scheduler_milestones', default=[60, 120, 160], type=int, nargs="+",
+    #                     help="Milestones of LR scheduler.")
+    # parser.add_argument('--lr_scheduler_gamma', default=0.2, type=float,
+    #                     help="Gamma parameter of LR scheduler.")
 
     # General validation/testing hyperparameters
     parser.add_argument('--batch_size_test', default=128, type=int,
@@ -85,7 +98,7 @@ def getArguments():
                         help="Select conv model decoder manifold.")
 
     # Hyperbolic geometry settings
-    parser.add_argument('--learn_k', action='store_true',
+    parser.add_argument('--learn_k', type=str2bool, default=False,
                         help="Set a learnable curvature of hyperbolic geometry.")
     parser.add_argument('--encoder_k', default=1.0, type=float,
                         help="Initial curvature of hyperbolic geometry in backbone (geoopt.K=-1/K).")
@@ -98,6 +111,12 @@ def getArguments():
     parser.add_argument('--dataset', default='CIFAR-100', type=str,
                         choices=["MNIST", "CIFAR-10", "CIFAR-100", "Tiny-ImageNet"],
                         help="Select a dataset.")
+    
+    parser.add_argument('--train_subset_fraction', default=None, type=float,
+                        help="For hyperparameter sweep: select fraction of dataset to use.")
+    
+    parser.add_argument('--val_fraction', type=float, default=0.1,
+                        help="What fraction to use for validation split.")
 
     args = parser.parse_args()
 
@@ -176,14 +195,18 @@ def main(args):
 
             # ------- Start validation and logging -------
             with torch.no_grad():
-                if lr_scheduler is not None:
-                    if (epoch + 1) == args.lr_scheduler_milestones[0]:  # skip the first drop for some Parameters
-                        optimizer.param_groups[1]['lr'] *= (1 / args.lr_scheduler_gamma) # Manifold params
-                        print("Skipped lr drop for manifold parameters")
+                # if lr_scheduler is not None:
+                #     if (epoch + 1) == args.lr_scheduler_milestones[0]:  # skip the first drop for some Parameters
+                #         optimizer.param_groups[1]['lr'] *= (1 / args.lr_scheduler_gamma) # Manifold params
+                #         print("Skipped lr drop for manifold parameters")
 
-                    lr_scheduler.step()
+                    # lr_scheduler.step()
+                
 
                 loss_val, acc1_val, acc5_val = evaluate(model, val_loader, criterion, device)
+
+                lr_scheduler.step()
+                print(optimizer.param_groups[0]['lr'])
 
                 print(
                     "Epoch {}/{}: Loss={:.4f}, Acc@1={:.4f}, Acc@5={:.4f}, Validation: Loss={:.4f}, Acc@1={:.4f}, Acc@5={:.4f}".format(

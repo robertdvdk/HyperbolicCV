@@ -88,7 +88,12 @@ def getArguments():
     # Dataset settings
     parser.add_argument('--dataset', default='CIFAR-100', type=str, choices=["MNIST", "CIFAR-10", "CIFAR-100", "Tiny-ImageNet"], 
                         help = "Select a dataset.")
-
+    
+    parser.add_argument('--train_subset_fraction', default=None, type=float,
+                        help="For hyperparameter sweep: select fraction of dataset to use.")
+    
+    parser.add_argument('--val_fraction', type=float, default=0.1,
+                        help="What fraction to use for validation split.")
 
     args, _ = parser.parse_known_args()
 
@@ -104,7 +109,7 @@ def main(args):
     print(args)
 
     print("Loading dataset...")
-    train_loader, _, test_loader, img_dim, num_classes = select_dataset(args, validation_split=False)
+    train_loader, _, test_loader, img_dim, num_classes = select_dataset(args)
 
     print("Creating model...")
     model = select_model(img_dim, num_classes, args)
