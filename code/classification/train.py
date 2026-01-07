@@ -127,7 +127,6 @@ def main(args):
     print("Running experiment: " + args.exp_name)
 
     print("Arguments:")
-    print(args)
 
     print("Loading dataset...")
     train_loader, val_loader, test_loader, img_dim, num_classes = select_dataset(args)
@@ -159,7 +158,6 @@ def main(args):
 
     best_acc = 0.0
     best_epoch = 0
-
     with wandb.init(project=project, name=args.exp_name, config=vars(args)) as run:
         for epoch in range(start_epoch, args.num_epochs):
             model.train()

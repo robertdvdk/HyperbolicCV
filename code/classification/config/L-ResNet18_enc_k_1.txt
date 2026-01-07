@@ -1,7 +1,7 @@
 # python code/classification/train.py -c classification/config/L-ResNet18.txt
 
 # Output settings
-exp_name = L-ResNet18_our_linear_good_hyperparams_enc_k_1
+exp_name = L-ResNet18_our_linear_good_hyperparams_lnorm
 output_dir = classification/output
 
 # General settings

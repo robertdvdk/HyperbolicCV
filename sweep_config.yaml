@@ -4,8 +4,8 @@
 program: code/classification/train.py
 method: bayes  # Options: grid, random, bayes
 metric:
-  name: val/acc@1
-  goal: maximize
+  name: val/loss
+  goal: minimize
 
 # Early termination to save compute
 early_terminate:
@@ -66,9 +66,6 @@ parameters:
   warmup_epochs:
     value: 10
 
-  optimizer:
-    value: RiemannianSGD
-
   encoder_k:
     value: 1.0
 
@@ -77,7 +74,9 @@ parameters:
 
   # Hyperparameters to search
 
-  # Learning rate - log scale search
+  optimizer:
+    values: [RiemannianSGD, RiemannianAdam, SGD, Adam]
+  
   lr:
     distribution: log_uniform_values
     min: 1e-3
