@@ -183,9 +183,20 @@ def main(args):
                     losses.update(loss.item())
                     acc1.update(top1.item())
                     acc5.update(top5.item())
+            
 
                 global_step += 1
                 # ------- End iteration -------
+
+
+            if np.isnan(loss.detach().cpu()) or np.isinf(loss.detach().cpu()):
+                run.log({
+                    "val/loss": 10,
+                    "failed": True,
+                    "failure_reason": "nan_loss"
+                })
+                run.finish()
+                return
 
             # ------- Start validation and logging -------
             with torch.no_grad():
