@@ -189,7 +189,7 @@ def main(args):
                 # ------- End iteration -------
 
 
-            if np.isnan(loss.detach().cpu()) or np.isinf(loss.detach().cpu()):
+            if torch.isnan(loss).item() or torch.isinf(loss).item():
                 run.log({
                     "val/loss": 10,
                     "failed": True,
