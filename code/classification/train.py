@@ -188,16 +188,6 @@ def main(args):
                 global_step += 1
                 # ------- End iteration -------
 
-
-            if torch.isnan(loss).item() or torch.isinf(loss).item():
-                run.log({
-                    "val/loss": 10,
-                    "failed": True,
-                    "failure_reason": "nan_loss"
-                })
-                run.finish()
-                return
-
             # ------- Start validation and logging -------
             with torch.no_grad():
                 # if lr_scheduler is not None:
