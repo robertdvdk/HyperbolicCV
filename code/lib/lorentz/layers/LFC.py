@@ -30,17 +30,19 @@ class LorentzFullyConnected(nn.Module):
 
     def reset_parameters(self, reset_params, a_default):
         in_features, out_features = self.U.shape
+        with torch.no_grad():
+            self.U.data.copy_(0.5 * torch.eye(in_features, out_features))
         if reset_params == "eye":
-            if in_features <= out_features:
-                with torch.no_grad():
-                    self.U.data.copy_(0.5 * torch.eye(in_features, out_features))
-            else:
-                print("not possible 'eye' initialization, defaulting to kaiming")
-                with torch.no_grad():
-                    self.U.data.copy_(
-                        torch.randn(in_features, out_features)
-                        * (2 * in_features * out_features) ** -0.5
-                    )
+            # if in_features <= out_features:
+            with torch.no_grad():
+                self.U.data.copy_(0.5 * torch.eye(in_features, out_features))
+            # else:
+            #     print("not possible 'eye' initialization, defaulting to kaiming")
+            #     with torch.no_grad():
+            #         self.U.data.copy_(
+            #             torch.randn(in_features, out_features)
+            #             * (2 * in_features * out_features) ** -0.5
+            #         )
             self.a.data.fill_(a_default)
         elif reset_params == "kaiming":
             with torch.no_grad():
