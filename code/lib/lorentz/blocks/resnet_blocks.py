@@ -9,7 +9,7 @@ from lib.lorentz.layers import (
 )
 
 
-def get_Conv2d(manifold, in_channels, out_channels, kernel_size, stride=1, padding=0, bias=True, LFC_normalize=False):
+def get_Conv2d(manifold, in_channels, out_channels, kernel_size, init_method, stride=1, padding=0, bias=True, LFC_normalize=False):
     return LorentzConv2d(
         manifold=manifold, 
         in_channels=in_channels+1, 
@@ -18,7 +18,8 @@ def get_Conv2d(manifold, in_channels, out_channels, kernel_size, stride=1, paddi
         stride=stride, 
         padding=padding, 
         bias=bias, 
-        LFC_normalize=LFC_normalize
+        LFC_normalize=LFC_normalize,
+        init_method=init_method
     )
 
 def get_BatchNorm2d(manifold, num_channels):
@@ -31,7 +32,7 @@ def get_Activation(manifold):
 class LorentzInputBlock(nn.Module):
     """ Input Block of ResNet model """
 
-    def __init__(self, manifold: CustomLorentz, img_dim, in_channels, bias=True):
+    def __init__(self, manifold: CustomLorentz, img_dim, in_channels, init_method, bias=True):
         super(LorentzInputBlock, self).__init__()
 
         self.manifold = manifold
@@ -43,7 +44,8 @@ class LorentzInputBlock(nn.Module):
                 in_channels,
                 kernel_size=3,
                 padding=1,
-                bias=bias
+                bias=bias,
+                init_method=init_method
             ),
             get_BatchNorm2d(self.manifold, in_channels),
             get_Activation(self.manifold),
@@ -60,11 +62,10 @@ class LorentzBasicBlock(nn.Module):
 
     expansion = 1
 
-    def __init__(self, manifold: CustomLorentz, in_channels, out_channels, stride=1, bias=True):
+    def __init__(self, manifold: CustomLorentz, in_channels, out_channels, stride=1, bias=True, init_method="old"):
         super(LorentzBasicBlock, self).__init__()
 
         self.manifold = manifold
-
         self.activation = get_Activation(self.manifold)
 
         self.conv = nn.Sequential(
@@ -75,7 +76,8 @@ class LorentzBasicBlock(nn.Module):
                 kernel_size=3,
                 stride=stride,
                 padding=1,
-                bias=bias
+                bias=bias,
+                init_method=init_method
             ),
             get_BatchNorm2d(self.manifold, out_channels),
             get_Activation(self.manifold),
@@ -85,7 +87,8 @@ class LorentzBasicBlock(nn.Module):
                 out_channels * LorentzBasicBlock.expansion,
                 kernel_size=3,
                 padding=1,
-                bias=bias
+                bias=bias,
+                init_method=init_method
             ),
             get_BatchNorm2d(self.manifold, out_channels * LorentzBasicBlock.expansion),
         )
@@ -101,7 +104,8 @@ class LorentzBasicBlock(nn.Module):
                     kernel_size=1,
                     stride=stride,
                     padding=0,
-                    bias=bias
+                    bias=bias,
+                    init_method=init_method
                 ),
                 get_BatchNorm2d(
                     self.manifold, out_channels * LorentzBasicBlock.expansion
@@ -126,7 +130,7 @@ class LorentzBottleneck(nn.Module):
 
     expansion = 4
 
-    def __init__(self, manifold: CustomLorentz, in_channels, out_channels, stride=1, bias=False):
+    def __init__(self, manifold: CustomLorentz, in_channels, out_channels, stride=1, bias=False, init_method="old"):
         super(LorentzBottleneck, self).__init__()
 
         self.manifold = manifold
@@ -140,7 +144,8 @@ class LorentzBottleneck(nn.Module):
                 out_channels,
                 kernel_size=1,
                 padding=0,
-                bias=bias
+                bias=bias,
+                init_method=init_method
             ),
             get_BatchNorm2d(self.manifold, out_channels),
             get_Activation(self.manifold),
@@ -151,7 +156,8 @@ class LorentzBottleneck(nn.Module):
                 kernel_size=3,
                 stride=stride,
                 padding=1,
-                bias=bias
+                bias=bias,
+                init_method=init_method
             ),
             get_BatchNorm2d(self.manifold, out_channels),
             get_Activation(self.manifold),
@@ -161,7 +167,8 @@ class LorentzBottleneck(nn.Module):
                 out_channels * LorentzBottleneck.expansion,
                 kernel_size=1,
                 padding=0,
-                bias=bias
+                bias=bias,
+                init_method=init_method
             ),
             get_BatchNorm2d(self.manifold, out_channels * LorentzBottleneck.expansion),
         )
@@ -177,7 +184,8 @@ class LorentzBottleneck(nn.Module):
                     kernel_size=1,
                     stride=stride,
                     padding=0,
-                    bias=bias
+                    bias=bias,
+                    init_method=init_method
                 ),
                 get_BatchNorm2d(
                     self.manifold, out_channels * LorentzBottleneck.expansion

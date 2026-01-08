@@ -9,17 +9,20 @@ class LorentzFullyConnected(nn.Module):
         manifold: CustomLorentz,
         in_features,
         out_features,
+        init_method,
         reset_params="eye",
         a_default=0.0,
         activation=nn.Identity(),
         do_mlr = False,
         bias=False,
-        normalize=False
+        normalize=False,
     ):
         super().__init__()
         self.manifold = manifold
         in_features = in_features - 1
         out_features = out_features - 1
+        self.init_method = init_method
+        print(init_method)
         self.U = nn.Parameter(torch.randn(in_features, out_features))
         self.a = nn.Parameter(torch.zeros(1, out_features))  # -b
         self.V_auxiliary = nn.Parameter(torch.randn(in_features, out_features))
@@ -27,32 +30,38 @@ class LorentzFullyConnected(nn.Module):
         self.activation = activation
 
         self.do_mlr = do_mlr
+        
 
     def reset_parameters(self, reset_params, a_default):
         in_features, out_features = self.U.shape
-        with torch.no_grad():
-            self.U.data.copy_(0.5 * torch.eye(in_features, out_features))
-        if reset_params == "eye":
-            # if in_features <= out_features:
+        if self.init_method == "old":
+            if reset_params == "eye":
+                if in_features <= out_features:
+                    with torch.no_grad():
+                        self.U.data.copy_(0.5 * torch.eye(in_features, out_features))
+                else:
+                    print("not possible 'eye' initialization, defaulting to kaiming")
+                    with torch.no_grad():
+                        self.U.data.copy_(
+                            torch.randn(in_features, out_features)
+                            * (2 * in_features * out_features) ** -0.5
+                        )
+                self.a.data.fill_(a_default)
+            elif reset_params == "kaiming":
+                with torch.no_grad():
+                    self.U.data.copy_(
+                        torch.randn(in_features, out_features)
+                        * (2 * in_features * out_features) ** -0.5
+                    )
+                self.a.data.fill_(a_default)
+            else:
+                raise KeyError(f"Unknown reset_params value: {reset_params}")
+        elif self.init_method == "eye05":
             with torch.no_grad():
                 self.U.data.copy_(0.5 * torch.eye(in_features, out_features))
-            # else:
-            #     print("not possible 'eye' initialization, defaulting to kaiming")
-            #     with torch.no_grad():
-            #         self.U.data.copy_(
-            #             torch.randn(in_features, out_features)
-            #             * (2 * in_features * out_features) ** -0.5
-            #         )
-            self.a.data.fill_(a_default)
-        elif reset_params == "kaiming":
+        elif self.init_method == "eye1":
             with torch.no_grad():
-                self.U.data.copy_(
-                    torch.randn(in_features, out_features)
-                    * (2 * in_features * out_features) ** -0.5
-                )
-            self.a.data.fill_(a_default)
-        else:
-            raise KeyError(f"Unknown reset_params value: {reset_params}")
+                self.U.data.copy_(torch.eye(in_features, out_features))
 
     def create_spacelike_vector(self):
         U_norm = self.U.norm(dim=0, keepdim=True)

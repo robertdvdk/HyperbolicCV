@@ -21,10 +21,11 @@ class LorentzConv1d(nn.Module):
             in_channels,
             out_channels,
             kernel_size,
+            init_method,
             stride=1,
             padding=0,
             bias=True,
-            LFC_normalize=False
+            LFC_normalize=False,
     ):
         super(LorentzConv1d, self).__init__()
 
@@ -42,7 +43,8 @@ class LorentzConv1d(nn.Module):
             lin_features, 
             self.out_channels, 
             bias=bias,
-            normalize=LFC_normalize
+            normalize=LFC_normalize,
+            init_method=init_method
         )
 
     def forward(self, x):
@@ -81,11 +83,12 @@ class LorentzConv2d(nn.Module):
             in_channels,
             out_channels,
             kernel_size,
+            init_method,
             stride=1,
             padding=0,
             dilation=1,
             bias=True,
-            LFC_normalize=False
+            LFC_normalize=False,
     ):
         super(LorentzConv2d, self).__init__()
 
@@ -125,7 +128,8 @@ class LorentzConv2d(nn.Module):
             lin_features, 
             self.out_channels, 
             bias=bias,
-            normalize=LFC_normalize
+            normalize=LFC_normalize,
+            init_method=init_method,
         )
         self.unfold = torch.nn.Unfold(kernel_size=(self.kernel_size[0], self.kernel_size[1]), dilation=dilation, padding=padding, stride=stride)
 
@@ -172,14 +176,15 @@ class LorentzConvTranspose2d(nn.Module):
         LFC_normalize: If Chen et al.'s internal normalization should be used in LFC 
     """
     def __init__(
-            self, 
-            manifold: CustomLorentz, 
-            in_channels, 
-            out_channels, 
-            kernel_size, 
-            stride=1, 
-            padding=0, 
-            output_padding=0, 
+            self,
+            manifold: CustomLorentz,
+            in_channels,
+            out_channels,
+            kernel_size,
+            init_method,
+            stride=1,
+            padding=0,
+            output_padding=0,
             bias=True,
             LFC_normalize=False
         ):
@@ -216,13 +221,14 @@ class LorentzConvTranspose2d(nn.Module):
         self.pad_weight = nn.Parameter(F.pad(torch.ones((self.in_channels,1,1,1)),(1,1,1,1)), requires_grad=False)
 
         self.conv = LorentzConv2d(
-            manifold=manifold, 
-            in_channels=in_channels, 
-            out_channels=out_channels, 
-            kernel_size=kernel_size, 
-            stride=1, 
-            padding=padding_implicit, 
-            bias=bias, 
+            manifold=manifold,
+            in_channels=in_channels,
+            out_channels=out_channels,
+            kernel_size=kernel_size,
+            init_method=init_method,
+            stride=1,
+            padding=padding_implicit,
+            bias=bias,
             LFC_normalize=LFC_normalize
         )
 

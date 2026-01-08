@@ -8,11 +8,11 @@ metric:
   goal: minimize
 
 # Early termination to save compute
-early_terminate:
-  type: hyperband
-  min_iter: 15        # Don't stop runs before epoch 15
-  eta: 2              # Fraction of runs to keep at each elimination
-  s: 3                # Number of rungs in the bracket
+# early_terminate:
+#   type: hyperband
+#   min_iter: 15        # Don't stop runs before epoch 15
+#   eta: 2              # Fraction of runs to keep at each elimination
+#   s: 3                # Number of rungs in the bracket
 
 parameters:
   # Fixed parameters (don't search these)
@@ -72,11 +72,10 @@ parameters:
   decoder_k:
     value: 1.0
 
-  optimizer:
-    value: RiemannianSGD
-
   # Hyperparameters to search
-  
+
+  optimizer:
+    values: [RiemannianAdam, RiemannianSGD]
   lr:
     distribution: log_uniform_values
     min: 1e-4
@@ -87,3 +86,6 @@ parameters:
     distribution: log_uniform_values
     min: 1e-5
     max: 1e-3
+
+  init_method:
+    values: [old, eye1, eye05]

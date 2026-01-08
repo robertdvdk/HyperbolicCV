@@ -113,6 +113,8 @@ def getArguments():
     
     parser.add_argument('--val_fraction', type=float, default=0.1,
                         help="What fraction to use for validation split.")
+    
+    parser.add_argument("--init_method", type=str, choices=["old", "eye05", "eye1"])
 
     args = parser.parse_args()
 

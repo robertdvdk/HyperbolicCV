@@ -61,7 +61,8 @@ def select_model(img_dim, num_classes, args):
         'img_dim' : img_dim,
         'embed_dim' : args.embedding_dim,
         'num_classes' : num_classes,
-        'bias' : args.encoder_manifold=="lorentz"
+        'bias' : args.encoder_manifold=="lorentz",
+        'init_method' : args.init_method
     }
 
     if args.encoder_manifold=="lorentz":
@@ -82,7 +83,8 @@ def select_model(img_dim, num_classes, args):
         enc_type=args.encoder_manifold,
         dec_type=args.decoder_manifold,
         enc_kwargs=enc_args,
-        dec_kwargs=dec_args
+        dec_kwargs=dec_args,
+        
     )
 
     return model
