@@ -1,7 +1,7 @@
 # python code/classification/train.py -c classification/config/L-ResNet18.txt
 
 # Output settings
-exp_name = L-ResNet18_our_linear_lr1e3_wd6e4
+exp_name = L-ResNet18_our_linear_lr1e3_wd6e4_alwayseye
 output_dir = classification/output
 
 # General settings
