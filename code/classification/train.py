@@ -175,7 +175,6 @@ def main(args):
 
                 logits = model(x)
                 loss = criterion(logits, y)
-
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()

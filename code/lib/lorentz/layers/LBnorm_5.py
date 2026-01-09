@@ -13,38 +13,29 @@ class LorentzBatchNorm(nn.Module):
         super(LorentzBatchNorm, self).__init__()
         self.manifold = manifold
 
-        self.beta = ManifoldParameter(self.manifold.origin(num_features), manifold=self.manifold)
-        self.gamma = torch.nn.Parameter(torch.ones((1,)))
+        self.mean = ManifoldParameter(self.manifold.origin(num_features), manifold=self.manifold)
+        # self.mean = torch.nn.Parameter(torch.zeros(num_features))
+        self.var = torch.nn.Parameter(torch.ones((1,)))
         self.eps = 1e-5
 
+        # running statistics
+        self.register_buffer('running_mean', torch.zeros(num_features))
+        self.register_buffer('running_var', torch.ones((1,)))
+
     def forward(self, x, momentum):
-        assert (len(x.shape)==2) or (len(x.shape)==3), "Wrong input shape in Lorentz batch normalization."
+        # assert (len(x.shape)==2) or (len(x.shape)==3), "Wrong input shape in Lorentz batch normalization."
+        input_mean = self.manifold.centroid(x).unsqueeze(0)
+        xLmean = -(x.narrow(dim=-1, start=0, length=1) * input_mean[:, 0]) + (x[:, 1:] * input_mean[:, 1:]).sum(dim=-1, keepdim=True)
+        d_sq = 2/self.manifold.k - 2*xLmean
+        input_var = d_sq.mean()
 
-        beta = self.beta
+        input_logm = self.manifold.transp(x=input_mean, y=self.mean, v=self.manifold.logmap(input_mean, x))
+        
+        input_logm = (self.var / (input_var + 1e-6)).sqrt() * input_logm
 
-        # Compute batch mean
-        mean = self.manifold.centroid(x)
-        if len(x.shape) == 3:
-            mean = self.manifold.centroid(mean)
-
-        # Transport batch to origin (center batch)
-        x_T = self.manifold.logmap(mean, x)
-        x_T = self.manifold.transp0back(mean, x_T)
-
-        # Compute Fréchet variance
-        if len(x.shape) == 3:
-            var = torch.mean(torch.norm(x_T, dim=-1), dim=(0,1))
-        else:
-            var = torch.mean(torch.norm(x_T, dim=-1), dim=0)
-
-        # Rescale batch
-        x_T = x_T*(self.gamma/(var+self.eps))
-
-        # Transport batch to learned mean
-        x_T = self.manifold.transp0(beta, x_T)
-        output = self.manifold.expmap(beta, x_T)
-
+        output = self.manifold.expmap(self.mean.unsqueeze(-2), input_logm)
         return output
+
 
 class LorentzBatchNorm1d(LorentzBatchNorm):
     """ 1D Lorentz Batch Normalization with Centroid and Fréchet variance
@@ -64,7 +55,7 @@ class LorentzBatchNorm2d(LorentzBatchNorm):
     def forward(self, x, momentum=0.1):
         """ x has to be in channel last representation -> Shape = bs x H x W x C """
         bs, h, w, c = x.shape
-        x = x.view(bs, -1, c)
+        x = x.view(-1, c)
         x = super(LorentzBatchNorm2d, self).forward(x, momentum)
         x = x.reshape(bs, h, w, c)
 
