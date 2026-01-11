@@ -17,7 +17,7 @@ lr = 1e-3
 weight_decay = 6e-4
 optimizer = RiemannianAdam
 lr_scheduler = cosine
-warmup_epochs = 10
+warmup_epochs = 0
 
 # General validation/testing hyperparameters
 batch_size_test = 128
@@ -37,4 +37,3 @@ decoder_k = 1.0
 dataset = CIFAR-100 # CIFAR-10 or Tiny-ImageNet
 train_subset_fraction = 1.0
 val_fraction = 0.1
-init_method = eye05
