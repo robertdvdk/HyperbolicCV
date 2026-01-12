@@ -92,7 +92,7 @@ def select_model(img_dim, num_classes, args):
 def select_optimizer(model, args):
     """ Selects and sets up an available optimizer and returns it. """
 
-    model_parameters = get_param_groups(model, args.lr, args.weight_decay)
+    model_parameters = get_param_groups(model, args.lr*0.2, args.weight_decay)
 
     if args.optimizer == "RiemannianAdam":
         optimizer = RiemannianAdam(model_parameters, lr=args.lr, weight_decay=args.weight_decay, stabilize=1)
