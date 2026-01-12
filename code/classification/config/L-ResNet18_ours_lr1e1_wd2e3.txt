@@ -1,7 +1,7 @@
 # python code/classification/train.py -c classification/config/L-ResNet18.txt
 
 # Output settings
-exp_name = L-ResNet18_our_linear_lr1e1_wd2e3
+exp_name = L-ResNet18_our_linear_lr1e1_wd2e3_step
 output_dir = classification/output
 
 # General settings
@@ -16,8 +16,8 @@ batch_size = 128
 lr = 1e-1
 weight_decay = 2e-3
 optimizer = RiemannianSGD
-lr_scheduler = cosine
-warmup_epochs = 10
+lr_scheduler = step
+warmup_epochs = 0
 
 # General validation/testing hyperparameters
 batch_size_test = 128
