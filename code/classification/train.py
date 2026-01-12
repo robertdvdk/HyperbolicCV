@@ -213,7 +213,6 @@ def main(args):
 
                 loss_val, acc1_val, acc5_val = evaluate(model, val_loader, criterion, device)
 
-                lr_scheduler.step()
                 print(optimizer.param_groups[0]['lr'])
 
                 print(
