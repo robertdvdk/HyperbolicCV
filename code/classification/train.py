@@ -21,6 +21,7 @@ import numpy as np
 
 from utils.initialize import select_dataset, select_model, select_optimizer, load_checkpoint
 from lib.utils.utils import AverageMeter, accuracy
+from lib import layer_config
 
 wandb.login()
 project = "ICML_Hyperbolic"
@@ -116,6 +117,12 @@ def getArguments():
     
     parser.add_argument("--init_method", type=str, choices=["old", "eye05", "eye1"])
 
+    # Layer implementation settings
+    parser.add_argument('--linear_method', default='ours', type=str, choices=['ours', 'theirs'],
+                        help="Select LorentzFullyConnected implementation: 'ours' (custom) or 'theirs' (Chen et al. 2022)")
+    parser.add_argument('--batchnorm', default='default', type=str, choices=['default', 'train'],
+                        help="Select LorentzBatchNorm behavior: 'default' (respect training mode) or 'train' (always use training branch)")
+
     args = parser.parse_args()
 
     return args
@@ -125,6 +132,11 @@ def main(args):
     device = args.device[0]
     torch.cuda.set_device(device)
     torch.cuda.empty_cache()
+
+    # Set global layer configuration
+    layer_config.LINEAR_METHOD = args.linear_method
+    layer_config.BATCHNORM_MODE = args.batchnorm
+    print(f"Layer config: linear_method={args.linear_method}, batchnorm={args.batchnorm}")
 
     print("Running experiment: " + args.exp_name)
 

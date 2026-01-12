@@ -224,13 +224,14 @@ def select_dataset(args):
             subset_length = int(len(train_set_raw) * args.train_subset_fraction)
             train_set_raw, _ = torch.utils.data.random_split(train_set_raw, [subset_length, len(train_set_raw) - subset_length], generator=torch.Generator().manual_seed(1))
 
-        if args.val_fraction:
+        if args.val_fraction > 0.0:
             new_train_set_length = int(len(train_set_raw) * (1 - args.val_fraction))
             train_subset, val_subset = torch.utils.data.random_split(train_set_raw, [new_train_set_length, len(train_set_raw) - new_train_set_length], generator=torch.Generator().manual_seed(1))
             train_set = TransformSubset(train_subset, train_transform)
             val_set = TransformSubset(val_subset, test_transform)
         else:
             train_set = TransformSubset(train_set_raw, train_transform)
+            val_set = datasets.CIFAR10('data', train=False, download=True, transform=test_transform)
 
         
         test_set = datasets.CIFAR10('data', train=False, download=True, transform=test_transform)
@@ -257,13 +258,14 @@ def select_dataset(args):
             subset_length = int(len(train_set_raw) * args.train_subset_fraction)
             train_set_raw, _ = torch.utils.data.random_split(train_set_raw, [subset_length, len(train_set_raw) - subset_length], generator=torch.Generator().manual_seed(1))
 
-        if args.val_fraction:
+        if args.val_fraction > 0.0:
             new_train_set_length = int(len(train_set_raw) * (1 - args.val_fraction))
             train_subset, val_subset = torch.utils.data.random_split(train_set_raw, [new_train_set_length, len(train_set_raw) - new_train_set_length], generator=torch.Generator().manual_seed(1))
             train_set = TransformSubset(train_subset, train_transform)
             val_set = TransformSubset(val_subset, test_transform)
         else:
             train_set = TransformSubset(train_set_raw, train_transform)
+            val_set = datasets.CIFAR100('data', train=False, download=True, transform=test_transform)
 
         test_set = datasets.CIFAR100('data', train=False, download=True, transform=test_transform)
 
@@ -307,21 +309,17 @@ def select_dataset(args):
         pin_memory=True, 
         shuffle=True
     )
+    val_loader = DataLoader(val_set, 
+        batch_size=args.batch_size_test, 
+        num_workers=8, 
+        pin_memory=True, 
+        shuffle=False
+    )
     test_loader = DataLoader(test_set, 
         batch_size=args.batch_size_test, 
         num_workers=8, 
         pin_memory=True, 
         shuffle=False
     ) 
-    
-    if args.val_fraction:
-        val_loader = DataLoader(val_set, 
-            batch_size=args.batch_size_test, 
-            num_workers=8, 
-            pin_memory=True, 
-            shuffle=False
-        )
-    else:
-        val_loader = test_loader
         
     return train_loader, val_loader, test_loader, img_dim, num_classes

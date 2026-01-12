@@ -2,8 +2,9 @@ import torch
 import torch.nn as nn
 
 from lib.lorentz.manifold import CustomLorentz
+from lib import layer_config
 
-class LorentzFullyConnected(nn.Module):
+class LorentzFullyConnectedNew(nn.Module):
     def __init__(
         self,
         manifold: CustomLorentz,
@@ -100,77 +101,97 @@ class LorentzFullyConnected(nn.Module):
     def mlr(self, x):
         return self.signed_dist2hyperplanes_scaled_angle(x)
 
-# class LorentzFullyConnected(nn.Module):
-#     """
-#         Modified Lorentz fully connected layer of Chen et al. (2022).
+class LorentzFullyConnectedOld(nn.Module):
+    """
+        Modified Lorentz fully connected layer of Chen et al. (2022).
 
-#         Code modified from https://github.com/chenweize1998/fully-hyperbolic-nn
+        Code modified from https://github.com/chenweize1998/fully-hyperbolic-nn
 
-#         args:
-#             manifold: Instance of Lorentz manifold
-#             in_features, out_features, bias: Same as nn.Linear
-#             init_scale: Scale parameter for internal normalization
-#             learn_scale: If scale parameter should be learnable
-#             normalize: If internal normalization should be applied
-#     """
+        args:
+            manifold: Instance of Lorentz manifold
+            in_features, out_features, bias: Same as nn.Linear
+            init_scale: Scale parameter for internal normalization
+            learn_scale: If scale parameter should be learnable
+            normalize: If internal normalization should be applied
+    """
 
-#     def __init__(
-#             self,
-#             manifold: CustomLorentz,
-#             in_features,
-#             out_features,
-#             bias=False,
-#             init_scale=None,
-#             learn_scale=False,
-#             normalize=False
-#         ):
-#         super(LorentzFullyConnected, self).__init__()
-#         self.manifold = manifold
-#         self.in_features = in_features
-#         self.out_features = out_features
-#         self.bias = bias
-#         self.normalize = normalize
+    def __init__(
+            self,
+            manifold: CustomLorentz,
+            in_features,
+            out_features,
+            bias=False,
+            init_scale=None,
+            learn_scale=False,
+            normalize=False,
+            init_method=None,  # Added for compatibility
+            reset_params=None,  # Added for compatibility
+            a_default=None,  # Added for compatibility
+            activation=None,  # Added for compatibility
+            do_mlr=False  # Added for compatibility
+        ):
 
-#         self.weight = nn.Linear(self.in_features, self.out_features, bias=bias)
+        print("TRUEEEEE")
+        super(LorentzFullyConnectedOld, self).__init__()
+        self.manifold = manifold
+        self.in_features = in_features
+        self.out_features = out_features
+        self.bias = bias
+        self.normalize = normalize
 
-#         self.init_std = 0.02
-#         self.reset_parameters()
+        self.weight = nn.Linear(self.in_features, self.out_features, bias=bias)
 
-#         # Scale for internal normalization
-#         if init_scale is not None:
-#             self.scale = nn.Parameter(torch.ones(()) * init_scale, requires_grad=learn_scale)
-#         else:
-#             self.scale = nn.Parameter(torch.ones(()) * 2.3, requires_grad=learn_scale)
+        self.init_std = 0.02
+        self.reset_parameters()
 
-#     def forward(self, x):
+        # Scale for internal normalization
+        if init_scale is not None:
+            self.scale = nn.Parameter(torch.ones(()) * init_scale, requires_grad=learn_scale)
+        else:
+            self.scale = nn.Parameter(torch.ones(()) * 2.3, requires_grad=learn_scale)
 
-#         x = self.weight(x)
-#         x_space = x.narrow(-1, 1, x.shape[-1] - 1)
+    def forward(self, x):
 
-#         if self.normalize:
-#             scale = x.narrow(-1, 0, 1).sigmoid() * self.scale.exp()
-#             square_norm = (x_space * x_space).sum(dim=-1, keepdim=True)
+        x = self.weight(x)
+        x_space = x.narrow(-1, 1, x.shape[-1] - 1)
 
-#             mask = square_norm <= 1e-10
+        if self.normalize:
+            scale = x.narrow(-1, 0, 1).sigmoid() * self.scale.exp()
+            square_norm = (x_space * x_space).sum(dim=-1, keepdim=True)
 
-#             square_norm[mask] = 1
-#             unit_length = x_space/torch.sqrt(square_norm)
-#             x_space = scale*unit_length
+            mask = square_norm <= 1e-10
 
-#             x_time = torch.sqrt(scale**2 + self.manifold.k + 1e-5)
-#             x_time = x_time.masked_fill(mask, self.manifold.k.sqrt())
+            square_norm[mask] = 1
+            unit_length = x_space/torch.sqrt(square_norm)
+            x_space = scale*unit_length
 
-#             mask = mask==False
-#             x_space = x_space * mask
+            x_time = torch.sqrt(scale**2 + self.manifold.k + 1e-5)
+            x_time = x_time.masked_fill(mask, self.manifold.k.sqrt())
 
-#             x = torch.cat([x_time, x_space], dim=-1)
-#         else:
-#             x = self.manifold.add_time(x_space)
+            mask = mask==False
+            x_space = x_space * mask
 
-#         return x
+            x = torch.cat([x_time, x_space], dim=-1)
+        else:
+            x = self.manifold.add_time(x_space)
 
-#     def reset_parameters(self):
-#         nn.init.uniform_(self.weight.weight, -self.init_std, self.init_std)
+        return x
 
-#         if self.bias:
-#             nn.init.constant_(self.weight.bias, 0)
+    def reset_parameters(self):
+        nn.init.uniform_(self.weight.weight, -self.init_std, self.init_std)
+
+        if self.bias:
+            nn.init.constant_(self.weight.bias, 0)
+
+
+class LorentzFullyConnected(nn.Module):
+    """
+    Wrapper class that delegates to the appropriate implementation
+    based on the global layer_config at instantiation time.
+    """
+    def __new__(cls, *args, **kwargs):
+        # Check config at instantiation time, not import time
+        if layer_config.LINEAR_METHOD == "theirs":
+            return LorentzFullyConnectedOld(*args, **kwargs)
+        else:  # "ours" or default
+            return LorentzFullyConnectedNew(*args, **kwargs)
