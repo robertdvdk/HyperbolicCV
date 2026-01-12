@@ -204,8 +204,8 @@ def main(args):
             # ------- Start validation and logging -------
             with torch.no_grad():
                 if lr_scheduler is not None:
-                    if (epoch + 1) == args.lr_scheduler_milestones[0]:  # skip the first drop for some Parameters
-                        optimizer.param_groups[1]['lr'] *= (1 / args.lr_scheduler_gamma) # Manifold params
+                    if (epoch + 1) == 60:  # skip the first drop for some Parameters
+                        optimizer.param_groups[1]['lr'] *= (1 / 0.2) # Manifold params
                         print("Skipped lr drop for manifold parameters")
 
                     lr_scheduler.step()
