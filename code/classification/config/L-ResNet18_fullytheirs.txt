@@ -39,4 +39,4 @@ train_subset_fraction = 1.0
 val_fraction = 0.0
 init_method = eye05
 linear_method = theirs
-batchnorm_mode = default
+batchnorm = default

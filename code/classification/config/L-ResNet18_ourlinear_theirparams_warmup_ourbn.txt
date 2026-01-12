@@ -39,4 +39,4 @@ train_subset_fraction = 1.0
 val_fraction = 0.1
 init_method = old
 linear_method = ours
-batchnorm_mode = train
+batchnorm = train
