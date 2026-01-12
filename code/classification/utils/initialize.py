@@ -119,16 +119,27 @@ def select_optimizer(model, args):
                                         schedulers=[warmup_scheduler, cosine_scheduler],
                                         milestones=[args.warmup_epochs])
         else:
-
             lr_scheduler = CosineAnnealingLR(
                 optimizer,
                 T_max=args.num_epochs,
                 eta_min=0  # LR goes down to 0
             )
     else:
-        lr_scheduler = MultiStepLR(
-            optimizer, milestones=[60, 120, 160], gamma=0.2
-        )
+        if args.warmup_epochs > 0:
+            warmup_scheduler = LinearLR(optimizer,
+                                        start_factor=0.01,
+                                        end_factor=1.0,
+                                        total_iters=args.warmup_epochs)
+            step_scheduler = MultiStepLR(
+                optimizer, milestones=[m - args.warmup_epochs for m in [60, 120, 160]], gamma=0.2
+            )
+            lr_scheduler = SequentialLR(optimizer,
+                                        schedulers=[warmup_scheduler, step_scheduler],
+                                        milestones=[args.warmup_epochs])
+        else:
+            lr_scheduler = MultiStepLR(
+                optimizer, milestones=[60, 120, 160], gamma=0.2
+            )
         
 
     return optimizer, lr_scheduler
