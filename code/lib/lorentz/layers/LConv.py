@@ -136,8 +136,11 @@ class LorentzConv2d(nn.Module):
         self.reset_parameters()
 
     def reset_parameters(self):
-        pass
-
+        stdv = math.sqrt(2.0 / ((self.in_channels-1) * self.kernel_size[0] * self.kernel_size[1]))
+        self.linearized_kernel.weight.weight.data.uniform_(-stdv, stdv)
+        if self.bias:
+            self.linearized_kernel.weight.bias.data.uniform_(-stdv, stdv)
+            
     def forward(self, x):
         """ x has to be in channel-last representation -> Shape = bs x H x W x C """
         bsz = x.shape[0]
