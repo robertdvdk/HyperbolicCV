@@ -1,7 +1,7 @@
 #!/bin/bash -l
 #SBATCH --job-name=train_fullytheirs_skip_lr_manifold
 #SBATCH --output=./%x_%j.out
-#SBATCH --time=06:00:00
+#SBATCH --time=08:00:00
 #SBATCH --partition=normal
 #SBATCH --ntasks=1
 #SBATCH --gpus-per-task=1
