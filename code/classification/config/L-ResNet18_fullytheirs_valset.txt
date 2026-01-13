@@ -37,6 +37,6 @@ decoder_k = 1.0
 dataset = CIFAR-100 # CIFAR-10 or Tiny-ImageNet
 train_subset_fraction = 1.0
 val_fraction = 0.1
-init_method = eye05
+init_method = old
 linear_method = theirs
 batchnorm = default
