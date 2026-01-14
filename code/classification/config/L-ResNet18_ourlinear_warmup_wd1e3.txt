@@ -1,7 +1,7 @@
 # python code/classification/train.py -c classification/config/L-ResNet18_fullytheirs.txt
 
 # Output settings
-exp_name = L-ResNet18_ourlinear_wd1e3
+exp_name = L-ResNet18_ourlinear_warmup_wd1e3
 output_dir = classification/output
 
 # General settings
@@ -17,7 +17,7 @@ lr = 1e-1
 weight_decay = 1e-3
 optimizer = RiemannianSGD
 lr_scheduler = step
-warmup_epochs = 0
+warmup_epochs = 10
 
 # General validation/testing hyperparameters
 batch_size_test = 128

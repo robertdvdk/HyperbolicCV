@@ -1,5 +1,5 @@
 #!/bin/bash -l
-#SBATCH --job-name=train_ourlinear_wd1e3
+#SBATCH --job-name=train_ourlinear_warmup_wd2e3
 #SBATCH --output=./%x_%j.out
 #SBATCH --time=08:00:00
 #SBATCH --partition=normal
@@ -12,4 +12,4 @@ set -e
 
 conda activate HCNN
 
-python code/classification/train.py -c classification/config/L-ResNet18_ourlinear_wd1e3.txt
+python code/classification/train.py -c classification/config/L-ResNet18_ourlinear_warmup_wd2e3.txt
