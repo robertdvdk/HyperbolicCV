@@ -1,5 +1,5 @@
 #!/bin/bash -l
-#SBATCH --job-name=train_fullytheirs_skip_lr_manifold
+#SBATCH --job-name=train_fullytheirs_valset_seed2
 #SBATCH --output=./%x_%j.out
 #SBATCH --time=08:00:00
 #SBATCH --partition=normal
@@ -12,4 +12,4 @@ set -e
 
 conda activate HCNN
 
-python code/classification/train.py -c classification/config/L-ResNet18_fullytheirs.txt
+python code/classification/train.py -c classification/config/L-ResNet18_fullytheirs_valset_seed2.txt

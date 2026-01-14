@@ -24,7 +24,7 @@ from tqdm import tqdm
 from utils.initialize import select_dataset, select_model, load_model_checkpoint
 from lib.utils.visualize import visualize_embeddings
 from train import evaluate
-
+from lib import layer_config
 from lib.utils.utils import AverageMeter, accuracy
 
 def getArguments():
@@ -94,6 +94,13 @@ def getArguments():
     
     parser.add_argument('--val_fraction', type=float, default=0.1,
                         help="What fraction to use for validation split.")
+    parser.add_argument("--init_method", type=str, choices=["old", "eye05", "eye1"])
+
+    # Layer implementation settings
+    parser.add_argument('--linear_method', default='ours', type=str, choices=['ours', 'theirs'],
+                        help="Select LorentzFullyConnected implementation: 'ours' (custom) or 'theirs' (Chen et al. 2022)")
+    parser.add_argument('--batchnorm', default='default', type=str, choices=['default', 'train'],
+                        help="Select LorentzBatchNorm behavior: 'default' (respect training mode) or 'train' (always use training branch)")
 
     args, _ = parser.parse_known_args()
 
@@ -104,6 +111,10 @@ def main(args):
     device = args.device[0]
     torch.cuda.set_device(device)
     torch.cuda.empty_cache()
+
+    layer_config.LINEAR_METHOD = args.linear_method
+    layer_config.BATCHNORM_MODE = args.batchnorm
+    print(f"Layer config: linear_method={args.linear_method}, batchnorm={args.batchnorm}")
 
     print("Arguments:")
     print(args)

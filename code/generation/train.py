@@ -109,9 +109,8 @@ def getArguments():
                         help = "Initial curvature of decoder space (geoopt.K=-1/K).")
     
     # Dataset settings
-    parser.add_argument('--dataset', default='CIFAR-10', type=str, choices=["MNIST", "CIFAR-10", "CIFAR-100", "CelebA"], 
+    parser.add_argument('--dataset', default='CIFAR-10', type=str, choices=["MNIST", "CIFAR-10", "CIFAR-100", "CelebA"],
                         help = "Select a dataset.")
-
 
     args = parser.parse_args()
 

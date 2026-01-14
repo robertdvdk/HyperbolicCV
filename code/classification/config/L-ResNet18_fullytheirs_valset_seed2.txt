@@ -1,20 +1,20 @@
-# python code/classification/train.py -c classification/config/L-ResNet18.txt
+# python code/classification/train.py -c classification/config/L-ResNet18_fullytheirs.txt
 
 # Output settings
-exp_name = L-ResNet18_our_linear_lr5e2_wd25e3_step
+exp_name = L-ResNet18_fullytheirs_valset_seed2
 output_dir = classification/output
 
 # General settings
 device = cuda:0
 dtype = float32
-seed = 1
-# load_checkpoint = classification/output/best_L-ResNet18_our_linear.pth
+seed = 2
+# load_checkpoint = classification/output/best_L-ResNet18.pth
 
 # General training hyperparameters
 num_epochs = 200
 batch_size = 128
-lr = 5e-2
-weight_decay = 2.5e-3
+lr = 1e-1
+weight_decay = 5e-4
 optimizer = RiemannianSGD
 lr_scheduler = step
 warmup_epochs = 0
@@ -37,4 +37,6 @@ decoder_k = 1.0
 dataset = CIFAR-100 # CIFAR-10 or Tiny-ImageNet
 train_subset_fraction = 1.0
 val_fraction = 0.1
-init_method = eye05
+init_method = old
+linear_method = theirs
+batchnorm = default
