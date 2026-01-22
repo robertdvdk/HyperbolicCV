@@ -61,6 +61,10 @@ class LorentzBatchNorm2d(nn.Module):
         return dist_sq.mean()
     
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        channel_last = x.dim() == 4 and x.shape[-1] == self.num_features and x.shape[1] != self.num_features
+        if channel_last:
+            x = x.permute(0, 3, 1, 2).contiguous()
+
         batch, C, H, W = x.shape
         
         if self.training:
@@ -87,11 +91,10 @@ class LorentzBatchNorm2d(nn.Module):
         origin = self.manifold.origin(C).unsqueeze(0).expand(x_flat.shape[0], -1)
         
         # 1. Log map: get tangent vector at mean pointing to x
-        # logmap expects [batch, dim] for base and [batch, m, dim] for target
-        v_at_mean = self.manifold.logmap(mean_flat, x_flat.unsqueeze(1)).squeeze(1)  # [N, C]
+        v_at_mean = self.manifold.logmap(mean_flat, x_flat)  # [N, C]
         
         # 2. Parallel transport tangent vector from mean to origin
-        v_at_origin = self.manifold.parallel_transport(mean_flat, v_at_mean.unsqueeze(1), origin).squeeze(1)
+        v_at_origin = self.manifold.transp(mean_flat, origin, v_at_mean)
         
         # 3. Scale in tangent space (only space components, time should stay ~0)
         # Tangent vectors at origin have time ≈ 0
@@ -106,4 +109,7 @@ class LorentzBatchNorm2d(nn.Module):
         # 5. Project back to manifold from space components
         x_out_flat = self.manifold.projection_space_orthogonal(v_shifted_space)
         
-        return self._to_spatial(x_out_flat, batch, H, W)
+        x_out = self._to_spatial(x_out_flat, batch, H, W)
+        if channel_last:
+            x_out = x_out.permute(0, 2, 3, 1).contiguous()
+        return x_out
