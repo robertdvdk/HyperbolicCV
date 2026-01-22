@@ -204,9 +204,16 @@ def select_dataset(args):
         ])
 
         train_set = datasets.MNIST('data', train=True, download=True, transform=train_transform)
-        if args.validation_split:
-            train_set, val_set = torch.utils.data.random_split(train_set, [50000, 10000], generator=torch.Generator().manual_seed(1))
+        if args.val_fraction > 0.0:
+            new_train_set_length = int(len(train_set) * (1 - args.val_fraction))
+            train_set, val_set = torch.utils.data.random_split(
+                train_set,
+                [new_train_set_length, len(train_set) - new_train_set_length],
+                generator=torch.Generator().manual_seed(1),
+            )
         test_set = datasets.MNIST('data', train=False, download=True, transform=test_transform)
+        if args.val_fraction <= 0.0:
+            val_set = test_set
 
         img_dim = [1, 32, 32]
         num_classes = 10

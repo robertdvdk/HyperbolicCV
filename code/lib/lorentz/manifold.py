@@ -35,6 +35,10 @@ class CustomLorentz(Lorentz):
 
         return centroid
 
+    def lorentz_midpoint(self, x, w=None, eps=1e-8):
+        """Alias for centroid to match expected LBnorm2 API."""
+        return self.centroid(x, w=w, eps=eps)
+
     def switch_man(self, x, manifold_in: Lorentz):
         """ Projection between Lorentz manifolds (e.g. change curvature) """
         x = manifold_in.logmap0(x)

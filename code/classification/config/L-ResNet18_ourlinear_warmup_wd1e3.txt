@@ -37,6 +37,9 @@ decoder_k = 1.0
 dataset = CIFAR-100 # CIFAR-10 or Tiny-ImageNet
 train_subset_fraction = 1.0
 val_fraction = 0.1
-init_method = kaiming
+
+mlr_std_mult = 2.5
+mlr = ours
+batchnorm = euclidean
 linear_method = ours
-batchnorm = manifold
+init_method = lorentz_kaiming

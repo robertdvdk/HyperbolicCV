@@ -109,13 +109,13 @@ def getArguments():
     # Multiple postprocessors
     parser.add_argument('--test_all', action='store_true',
                         help="Test multiple postprocessors.")
-    parser.add_argument("--init_method", type=str, choices=["old", "eye05", "eye1"])
+    parser.add_argument("--init_method", type=str, choices=["eye", "kaiming", "lorentz_kaiming"])
 
     # Layer implementation settings
     parser.add_argument('--linear_method', default='theirs', type=str, choices=['ours', 'theirs'],
                         help="Select LorentzFullyConnected implementation: 'ours' (custom) or 'theirs' (Chen et al. 2022)")
-    parser.add_argument('--batchnorm', default='default', type=str, choices=['default', 'train'],
-                        help="Select LorentzBatchNorm behavior: 'default' (respect training mode) or 'train' (always use training branch)")
+    parser.add_argument('--batchnorm', default='manifold', type=str, choices=['manifold', 'euclidean'],
+                        help="Select LorentzBatchNorm implementation: 'manifold' (LBnorm.py) or 'euclidean' (LBnorm2.py)")
 
     args = parser.parse_args()
     return args

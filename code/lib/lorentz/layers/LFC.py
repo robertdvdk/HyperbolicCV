@@ -56,12 +56,12 @@ class LorentzFullyConnectedNew(nn.Module):
                 with torch.no_grad():
                     self.U.data.copy_(scale * torch.eye(in_features, out_features))
         elif reset_params == "kaiming":
-                with torch.no_grad():
-                    self.U.data.copy_(
-                        torch.randn(in_features, out_features)
-                        * (2 * in_features * out_features) ** -0.5
-                    )
-                self.a.data.fill_(a_default)
+            with torch.no_grad():
+                self.U.data.copy_(
+                    torch.randn(in_features, out_features)
+                    * (2 * in_features * out_features) ** -0.5
+                )
+            self.a.data.fill_(a_default)
 
         elif reset_params == "lorentz_kaiming":
             # For Lorentz models: divide std by 0.5 to account for time coordinate
