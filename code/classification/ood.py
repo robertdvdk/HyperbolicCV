@@ -15,7 +15,6 @@ import numpy as np
 import configargparse
 
 from openood.evaluation_api import Evaluator
-
 # Reuse your existing initialization functions
 from utils.initialize import select_model
 
@@ -27,63 +26,63 @@ class OpenOODWrapper(nn.Module):
         super().__init__()
         self.model = resnet_model
 
-        if self.model.predictor is None:
-            raise ValueError("Model must have a predictor layer for OpenOOD evaluation")
+        # if self.model.predictor is None:
+        #     raise ValueError("Model must have a predictor layer for OpenOOD evaluation")
 
-        self.feature_dim = self.model.embed_dim * self.model.block.expansion
+        # self.feature_dim = self.model.embed_dim * self.model.block.expansion
 
     def forward(self, x, return_feature=False, return_feature_list=False):
         """Modified forward pass that can return features"""
-        # Forward through conv layers
-        out = self.model.conv1(x)
-        out_1 = self.model.conv2_x(out)
-        out_2 = self.model.conv3_x(out_1)
-        out_3 = self.model.conv4_x(out_2)
-        out_4 = self.model.conv5_x(out_3)
-        out = self.model.avg_pool(out_4)
+        # # Forward through conv layers
+        # out = self.model.conv1(x)
+        # out_1 = self.model.conv2_x(out)
+        # out_2 = self.model.conv3_x(out_1)
+        # out_3 = self.model.conv4_x(out_2)
+        # out_4 = self.model.conv5_x(out_3)
+        # out = self.model.avg_pool(out_4)
 
-        # Flatten features
-        features = out.view(out.size(0), -1)
+        # # Flatten features
+        # features = out.view(out.size(0), -1)
 
-        # Get logits
-        logits = self.model.predictor(features)
+        # # Get logits
+        logits = self.model.forward(x)
 
         # Return based on flags
-        if return_feature:
-            return logits, features
-        elif return_feature_list:
-            return logits, [features]
+        # if return_feature:
+        #     return logits, features
+        # elif return_feature_list:
+        #     return logits, [features]
         return logits
 
-    def get_fc(self):
-        """Return FC layer weights and bias as numpy arrays"""
-        predictor = self.model.predictor
+    # def get_fc(self):
+    #     """Return FC layer weights and bias as numpy arrays"""
+    #     predictor = self.model.predictor
 
-        # Handle Euclidean case (standard nn.Linear)
-        if isinstance(predictor, nn.Linear):
-            weight = predictor.weight.detach().cpu().numpy()
-            bias = predictor.bias.detach().cpu().numpy() if predictor.bias is not None else np.zeros(predictor.out_features)
-            return weight, bias
+    #     # Handle Euclidean case (standard nn.Linear)
+    #     if isinstance(predictor, nn.Linear):
+    #         weight = predictor.weight.detach().cpu().numpy()
+    #         bias = predictor.bias.detach().cpu().numpy() if predictor.bias is not None else np.zeros(predictor.out_features)
+    #         return weight, bias
 
-        # Handle Lorentz case (LorentzMLR)
-        else:
-            # For LorentzMLR, we need to extract the underlying parameters
-            # Check what attributes your LorentzMLR has and adjust accordingly
-            if hasattr(predictor, 'weight'):
-                weight = predictor.weight.detach().cpu().numpy()
-                bias = predictor.bias.detach().cpu().numpy() if hasattr(predictor, 'bias') and predictor.bias is not None else np.zeros(predictor.num_classes)
-                return weight, bias
-            else:
-                # Fallback: create dummy parameters (works for MSP, Energy, ODIN)
-                print("Warning: Using dummy FC parameters for Lorentz model. Some postprocessors may not work optimally.")
-                num_classes = getattr(predictor, 'num_classes', 100)  # adjust default
-                weight = np.random.randn(num_classes, self.feature_dim + 1) * 0.01
-                bias = np.zeros(num_classes)
-                return weight, bias
+    #     # Handle Lorentz case (LorentzMLR)
+    #     else:
+    #         # For LorentzMLR, we need to extract the underlying parameters
+    #         # Check what attributes your LorentzMLR has and adjust accordingly
+    #         if hasattr(predictor, 'weight'):
+    #             weight = predictor.weight.detach().cpu().numpy()
+    #             bias = predictor.bias.detach().cpu().numpy() if hasattr(predictor, 'bias') and predictor.bias is not None else np.zeros(predictor.num_classes)
+    #             return weight, bias
+    #         else:
+    #             # Fallback: create dummy parameters (works for MSP, Energy, ODIN)
+    #             print("Warning: Using dummy FC parameters for Lorentz model. Some postprocessors may not work optimally.")
+    #             num_classes = getattr(predictor, 'num_classes', 100)  # adjust default
+    #             weight = np.random.randn(num_classes, self.feature_dim + 1) * 0.01
+    #             bias = np.zeros(num_classes)
+    #             return weight, bias
 
-    def get_fc_layer(self):
-        """Return the predictor layer module"""
-        return self.model.predictor
+    # def get_fc_layer(self):
+    #     """Return the predictor layer module"""
+    #     return self.model.predictor
 
 
 def getArguments():
@@ -110,6 +109,13 @@ def getArguments():
     # Multiple postprocessors
     parser.add_argument('--test_all', action='store_true',
                         help="Test multiple postprocessors.")
+    parser.add_argument("--init_method", type=str, choices=["old", "eye05", "eye1"])
+
+    # Layer implementation settings
+    parser.add_argument('--linear_method', default='theirs', type=str, choices=['ours', 'theirs'],
+                        help="Select LorentzFullyConnected implementation: 'ours' (custom) or 'theirs' (Chen et al. 2022)")
+    parser.add_argument('--batchnorm', default='default', type=str, choices=['default', 'train'],
+                        help="Select LorentzBatchNorm behavior: 'default' (respect training mode) or 'train' (always use training branch)")
 
     args = parser.parse_args()
     return args
@@ -118,6 +124,7 @@ def getArguments():
 def load_model_from_checkpoint(checkpoint_path, device):
     """Load model from your training checkpoint"""
     print(f"Loading checkpoint from {checkpoint_path}")
+    print(os.listdir("./classification/output"))
     checkpoint = torch.load(checkpoint_path, map_location=device)
 
     # Extract training args (stored in checkpoint)
@@ -147,6 +154,10 @@ def load_model_from_checkpoint(checkpoint_path, device):
         raise ValueError(f"Unknown dataset: {train_args.dataset}")
 
     # Recreate model using your existing select_model function
+    train_args.linear_method = args.linear_method
+    train_args.batchnorm = args.batchnorm
+    print(f"Layer config: linear_method={args.linear_method}, batchnorm={args.batchnorm}")
+
     model = select_model(img_dim, num_classes, train_args)
 
     # Load weights

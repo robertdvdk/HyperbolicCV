@@ -1,17 +1,12 @@
 import torch.nn as nn
 
-from lib.Euclidean.blocks.resnet_blocks import BasicBlock, Bottleneck
-
 from lib.lorentz.blocks.resnet_blocks import (
     LorentzBasicBlock,
-    LorentzBottleneck,
     LorentzInputBlock,
 )
 
 from lib.lorentz.layers import LorentzMLR, LorentzGlobalAvgPool2d
 from lib.lorentz.manifold import CustomLorentz
-
-__all__ = ["resnet10", "resnet18", "resnet34", "resnet50", "resnet101", "resnet152"]
 
 
 class ResNet(nn.Module):
@@ -28,6 +23,8 @@ class ResNet(nn.Module):
         num_classes=100,
         bias=True,
         remove_linear=False,
+        linear_method="ours",
+        batchnorm_impl="manifold",
     ):
         super(ResNet, self).__init__()
         self.init_method = init_method
@@ -39,6 +36,8 @@ class ResNet(nn.Module):
 
         self.bias = bias
         self.block = block
+        self.linear_method = linear_method
+        self.batchnorm_impl = batchnorm_impl
 
         self.manifold = manifold
         self.conv1 = self._get_inConv()
@@ -84,6 +83,8 @@ class ResNet(nn.Module):
                         init_method=self.init_method,
                         stride=stride,
                         bias=self.bias,
+                        linear_method=self.linear_method,
+                        batchnorm_impl=self.batchnorm_impl,
                     )
                 )
             else:
@@ -115,7 +116,9 @@ class ResNet(nn.Module):
                 self.img_dim,
                 self.in_channels,
                 init_method=self.init_method,
-                bias=self.bias
+                bias=self.bias,
+                linear_method=self.linear_method,
+                batchnorm_impl=self.batchnorm_impl,
             )
 
         else:
@@ -146,99 +149,10 @@ class ResNet(nn.Module):
 #################################################
 #       Lorentz
 #################################################
-def Lorentz_resnet10(k=1, learn_k=False, manifold=None, **kwargs):
-    """Constructs a ResNet-10 model."""
-    if not manifold:
-        manifold = CustomLorentz(k=k, learnable=learn_k)
-    init_method = kwargs.pop('init_method', 'old')
-    model = ResNet(LorentzBasicBlock, [1, 1, 1, 1], init_method, manifold, **kwargs)
-    return model
-
-
 def Lorentz_resnet18(k=1, learn_k=False, manifold=None, **kwargs):
     """Constructs a ResNet-18 model."""
     if not manifold:
         manifold = CustomLorentz(k=k, learnable=learn_k)
     init_method = kwargs.pop('init_method', 'old')
     model = ResNet(LorentzBasicBlock, [2, 2, 2, 2], init_method, manifold, **kwargs)
-    return model
-
-
-def Lorentz_resnet34(k=1, learn_k=False, manifold=None, **kwargs):
-    """Constructs a ResNet-34 model."""
-    if not manifold:
-        manifold = CustomLorentz(k=k, learnable=learn_k)
-    init_method = kwargs.pop('init_method', 'old')
-    model = ResNet(LorentzBasicBlock, [3, 4, 6, 3], init_method, manifold, **kwargs)
-    return model
-
-
-def Lorentz_resnet50(k=1, learn_k=False, manifold=None, **kwargs):
-    """Constructs a ResNet-50 model."""
-    if not manifold:
-        manifold = CustomLorentz(k=k, learnable=learn_k)
-    init_method = kwargs.pop('init_method', 'old')
-    model = ResNet(LorentzBottleneck, [3, 4, 6, 3], init_method, manifold, **kwargs)
-    return model
-
-
-def Lorentz_resnet101(k=1, learn_k=False, manifold=None, **kwargs):
-    """Constructs a ResNet-101 model."""
-    if not manifold:
-        manifold = CustomLorentz(k=k, learnable=learn_k)
-    init_method = kwargs.pop('init_method', 'old')
-    model = ResNet(LorentzBottleneck, [3, 4, 23, 3], init_method, manifold, **kwargs)
-    return model
-
-
-def Lorentz_resnet152(k=1, learn_k=False, manifold=None, **kwargs):
-    """Constructs a ResNet-152 model."""
-    if not manifold:
-        manifold = CustomLorentz(k=k, learnable=learn_k)
-    init_method = kwargs.pop('init_method', 'old')
-    model = ResNet(LorentzBottleneck, [3, 8, 36, 3], init_method, manifold, **kwargs)
-    return model
-
-#################################################
-#       Euclidean
-#################################################
-def resnet10(**kwargs):
-    """Constructs a ResNet-10 model."""
-    init_method = kwargs.pop('init_method', 'old')
-    model = ResNet(BasicBlock, [1, 1, 1, 1], init_method, **kwargs)
-    return model
-
-
-def resnet18(**kwargs):
-    """Constructs a ResNet-18 model."""
-    init_method = kwargs.pop('init_method', 'old')
-    model = ResNet(BasicBlock, [2, 2, 2, 2], init_method, **kwargs)
-    return model
-
-
-def resnet34(**kwargs):
-    """Constructs a ResNet-34 model."""
-    init_method = kwargs.pop('init_method', 'old')
-    model = ResNet(BasicBlock, [3, 4, 6, 3], init_method, **kwargs)
-    return model
-
-
-def resnet50(**kwargs):
-    """Constructs a ResNet-50 model."""
-    init_method = kwargs.pop('init_method', 'old')
-    model = ResNet(Bottleneck, [3, 4, 6, 3], init_method, **kwargs)
-    return model
-
-
-def resnet101(**kwargs):
-    """Constructs a ResNet-101 model."""
-    init_method = kwargs.pop('init_method', 'old')
-    model = ResNet(Bottleneck, [3, 4, 23, 3], init_method, **kwargs)
-    return model
-
-
-def resnet152(**kwargs):
-    """Constructs a ResNet-152 model."""
-    init_method = kwargs.pop('init_method', 'old')
-    model = ResNet(Bottleneck, [3, 8, 36, 3], init_method, **kwargs)
     return model

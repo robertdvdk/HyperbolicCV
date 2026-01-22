@@ -21,7 +21,6 @@ import numpy as np
 
 from utils.initialize import select_dataset, select_model, select_optimizer, load_checkpoint
 from lib.utils.utils import AverageMeter, accuracy
-from lib import layer_config
 
 wandb.login()
 project = "ICML_Hyperbolic"
@@ -115,13 +114,17 @@ def getArguments():
     parser.add_argument('--val_fraction', type=float, default=0.1,
                         help="What fraction to use for validation split.")
     
-    parser.add_argument("--init_method", type=str, choices=["old", "eye05", "eye1"])
+    parser.add_argument("--init_method", type=str, choices=["eye", "kaiming", "lorentz_kaiming"])
 
     # Layer implementation settings
     parser.add_argument('--linear_method', default='ours', type=str, choices=['ours', 'theirs'],
                         help="Select LorentzFullyConnected implementation: 'ours' (custom) or 'theirs' (Chen et al. 2022)")
-    parser.add_argument('--batchnorm', default='default', type=str, choices=['default', 'train'],
-                        help="Select LorentzBatchNorm behavior: 'default' (respect training mode) or 'train' (always use training branch)")
+    parser.add_argument('--batchnorm', default='manifold', type=str, choices=['manifold', 'euclidean'],
+                        help="Select LorentzBatchNorm implementation: 'manifold' (LBnorm.py) or 'euclidean' (LBnorm2.py)")
+    parser.add_argument('--mlr', default='ours', type=str, choices=['ours', 'theirs'],
+                        help="Select Lorentz MLR decoder: 'ours' (LorentzFullyConnectedNew) or 'theirs' (LorentzMLR)")
+    parser.add_argument('--mlr_std_mult', default=1.0, type=float,
+                        help="Multiplier for MLR init std when using LorentzFullyConnectedNew with do_mlr=True")
 
     args = parser.parse_args()
 
@@ -134,10 +137,6 @@ def main(args):
     torch.cuda.empty_cache()
 
     # Set global layer configuration
-    layer_config.LINEAR_METHOD = args.linear_method
-    layer_config.BATCHNORM_MODE = args.batchnorm
-    print(f"Layer config: linear_method={args.linear_method}, batchnorm={args.batchnorm}")
-
     print("Running experiment: " + args.exp_name)
 
     print("Arguments:")
@@ -165,6 +164,20 @@ def main(args):
     model = DataParallel(model, device_ids=args.device)
 
     if args.compile:
+        try:
+            import torch._dynamo as torch_dynamo
+            from lib.geoopt.tensor import ManifoldTensor, ManifoldParameter
+
+            if hasattr(torch_dynamo.config, "traceable_tensor_subclasses"):
+                torch_dynamo.config.traceable_tensor_subclasses |= {
+                    ManifoldTensor,
+                    ManifoldParameter,
+                }
+            if hasattr(torch_dynamo.config, "allow_tensor_subclasses"):
+                torch_dynamo.config.allow_tensor_subclasses = True
+        except Exception as exc:
+            print(f"Warning: could not configure torch._dynamo for geoopt tensors: {exc}")
+
         model = torch.compile(model)
 
     print("Training...")

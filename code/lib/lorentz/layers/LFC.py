@@ -2,7 +2,6 @@ import torch
 import torch.nn as nn
 
 from lib.lorentz.manifold import CustomLorentz
-from lib import layer_config
 
 class LorentzFullyConnectedNew(nn.Module):
     def __init__(
@@ -10,59 +9,75 @@ class LorentzFullyConnectedNew(nn.Module):
         manifold: CustomLorentz,
         in_features,
         out_features,
-        init_method,
-        reset_params="eye",
+        init_method="eye",
+        reset_params=None,
         a_default=0.0,
         activation=nn.Identity(),
         do_mlr = False,
         bias=False,
         normalize=False,
+        mlr_std_mult=1.0,
     ):
         super().__init__()
         self.manifold = manifold
         in_features = in_features - 1
         out_features = out_features - 1
         self.init_method = init_method
-        print(init_method)
         self.U = nn.Parameter(torch.randn(in_features, out_features))
         self.a = nn.Parameter(torch.zeros(1, out_features))  # -b
         self.V_auxiliary = nn.Parameter(torch.randn(in_features, out_features))
-        self.reset_parameters(reset_params=reset_params, a_default=a_default)
+        resolved_reset = self._resolve_reset_params(init_method, reset_params, do_mlr)
+        self.reset_parameters(reset_params=resolved_reset, a_default=a_default, mlr_std_mult=mlr_std_mult)
         self.activation = activation
 
         self.do_mlr = do_mlr
         
 
-    def reset_parameters(self, reset_params, a_default):
+    def _resolve_reset_params(self, init_method, reset_params, do_mlr):
+        if do_mlr:
+            return "mlr"
+        if reset_params is not None:
+            return reset_params
+        if init_method in [None, "old"]:
+            return "eye"
+        return init_method
+
+    def reset_parameters(self, reset_params, a_default, mlr_std_mult=1.0):
         in_features, out_features = self.U.shape
-        if self.init_method == "old":
-            if reset_params == "eye":
-                if in_features <= out_features:
-                    with torch.no_grad():
-                        self.U.data.copy_(0.5 * torch.eye(in_features, out_features))
-                else:
-                    print("not possible 'eye' initialization, defaulting to kaiming")
-                    with torch.no_grad():
-                        self.U.data.copy_(
-                            torch.randn(in_features, out_features)
-                            * (2 * in_features * out_features) ** -0.5
-                        )
-                self.a.data.fill_(a_default)
-            elif reset_params == "kaiming":
+            
+
+        in_features, out_features = self.U.shape
+        if reset_params == "eye":
+            scale = 0.5
+            if in_features <= out_features:
+                with torch.no_grad():
+                    self.U.data.copy_(scale * torch.eye(in_features, out_features))
+            else:
+                with torch.no_grad():
+                    self.U.data.copy_(scale * torch.eye(in_features, out_features))
+        elif reset_params == "kaiming":
                 with torch.no_grad():
                     self.U.data.copy_(
                         torch.randn(in_features, out_features)
                         * (2 * in_features * out_features) ** -0.5
                     )
                 self.a.data.fill_(a_default)
-            else:
-                raise KeyError(f"Unknown reset_params value: {reset_params}")
-        elif self.init_method == "eye05":
+
+        elif reset_params == "lorentz_kaiming":
+            # For Lorentz models: divide std by 0.5 to account for time coordinate
+            std = (1.0 / in_features) ** 0.5
             with torch.no_grad():
-                self.U.data.copy_(0.5 * torch.eye(in_features, out_features))
-        elif self.init_method == "eye1":
+                self.U.data.normal_(0, std)
+            self.a.data.fill_(a_default)
+
+        elif reset_params == "mlr":
+            std = (5.0 / in_features) ** 0.5 * mlr_std_mult
             with torch.no_grad():
-                self.U.data.copy_(torch.eye(in_features, out_features))
+                self.U.data.normal_(0, std)
+            self.a.data.fill_(a_default)
+
+        else:
+            raise KeyError(f"Unknown reset_params value: {reset_params}")
 
     def create_spacelike_vector(self):
         U_norm = self.U.norm(dim=0, keepdim=True)
@@ -131,7 +146,6 @@ class LorentzFullyConnectedOld(nn.Module):
             do_mlr=False  # Added for compatibility
         ):
 
-        print("TRUEEEEE")
         super(LorentzFullyConnectedOld, self).__init__()
         self.manifold = manifold
         self.in_features = in_features
@@ -187,11 +201,13 @@ class LorentzFullyConnectedOld(nn.Module):
 class LorentzFullyConnected(nn.Module):
     """
     Wrapper class that delegates to the appropriate implementation
-    based on the global layer_config at instantiation time.
+    based on the linear_method at instantiation time.
     """
     def __new__(cls, *args, **kwargs):
         # Check config at instantiation time, not import time
-        if layer_config.LINEAR_METHOD == "theirs":
+        linear_method = kwargs.pop("linear_method", "ours")
+        if linear_method == "theirs":
+            kwargs.pop("mlr_std_mult", None)
             return LorentzFullyConnectedOld(*args, **kwargs)
         else:  # "ours" or default
             return LorentzFullyConnectedNew(*args, **kwargs)

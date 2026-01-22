@@ -4,7 +4,6 @@ import torch.nn.functional as F
 
 from lib.geoopt import ManifoldParameter
 from lib.lorentz.manifold import CustomLorentz
-from lib import layer_config
 
 
 class LorentzBatchNorm(nn.Module):
@@ -27,7 +26,7 @@ class LorentzBatchNorm(nn.Module):
 
         beta = self.beta
 
-        if self.training or layer_config.BATCHNORM_MODE == "train":
+        if self.training:
             # Compute batch mean
             mean = self.manifold.centroid(x)
             if len(x.shape) == 3:

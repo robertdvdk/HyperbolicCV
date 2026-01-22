@@ -30,7 +30,35 @@ class ManifoldTensor(torch.Tensor):
         cls, *args, manifold: Manifold = Euclidean(), requires_grad=False, **kwargs
     ):
         if len(args) == 1 and isinstance(args[0], torch.Tensor):
-            data = args[0].data
+            data = args[0]
+            try:
+                from torch._subclasses.fake_tensor import FakeTensor
+
+                if isinstance(data, FakeTensor) or type(data).__name__ == "FakeTensor" or getattr(data, "fake_mode", None) is not None:
+                    try:
+                        data.manifold = manifold
+                    except Exception:
+                        pass
+                    if requires_grad is not None:
+                        try:
+                            data.requires_grad_(requires_grad)
+                        except Exception:
+                            pass
+                    return data
+            except Exception:
+                pass
+            if type(data).__name__ == "FakeTensor" or getattr(data, "fake_mode", None) is not None:
+                try:
+                    data.manifold = manifold
+                except Exception:
+                    pass
+                if requires_grad is not None:
+                    try:
+                        data.requires_grad_(requires_grad)
+                    except Exception:
+                        pass
+                return data
+            data = data.data
         else:
             data = torch.Tensor(*args, **kwargs)
         if kwargs.get("device") is not None:
@@ -142,6 +170,25 @@ class ManifoldTensor(torch.Tensor):
         if id(self) in memo:
             return memo[id(self)]
         else:
+            try:
+                import torch._dynamo
+
+                if torch._dynamo.is_compiling():
+                    memo[id(self)] = self
+                    return self
+            except Exception:
+                pass
+            try:
+                from torch._subclasses.fake_tensor import FakeTensor
+
+                if isinstance(self.data, FakeTensor) or type(self.data).__name__ == "FakeTensor" or getattr(self.data, "fake_mode", None) is not None:
+                    memo[id(self)] = self
+                    return self
+            except Exception:
+                pass
+            if type(self.data).__name__ == "FakeTensor" or getattr(self.data, "fake_mode", None) is not None:
+                memo[id(self)] = self
+                return self
             result = type(self)(
                 self.data.clone(memory_format=torch.preserve_format),
                 manifold=copy.deepcopy(self.manifold, memo=memo),
@@ -167,6 +214,33 @@ class ManifoldParameter(ManifoldTensor, torch.nn.Parameter):
         if data is None:
             data = ManifoldTensor(manifold=manifold or Euclidean())
         elif not isinstance(data, ManifoldTensor):
+            try:
+                from torch._subclasses.fake_tensor import FakeTensor
+
+                if isinstance(data, FakeTensor) or type(data).__name__ == "FakeTensor" or getattr(data, "fake_mode", None) is not None:
+                    try:
+                        data.manifold = manifold or Euclidean()
+                    except Exception:
+                        pass
+                    if requires_grad is not None:
+                        try:
+                            data.requires_grad_(requires_grad)
+                        except Exception:
+                            pass
+                    return data
+            except Exception:
+                pass
+            if type(data).__name__ == "FakeTensor" or getattr(data, "fake_mode", None) is not None:
+                try:
+                    data.manifold = manifold or Euclidean()
+                except Exception:
+                    pass
+                if requires_grad is not None:
+                    try:
+                        data.requires_grad_(requires_grad)
+                    except Exception:
+                        pass
+                return data
             data = ManifoldTensor(data, manifold=manifold or Euclidean())
         else:
             if manifold is not None and data.manifold != manifold:

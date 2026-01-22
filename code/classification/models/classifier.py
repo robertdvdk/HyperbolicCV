@@ -2,31 +2,21 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from lib.lorentz.layers.LFC import LorentzFullyConnectedNew
 from lib.lorentz.manifold import CustomLorentz
-from lib.geoopt.manifolds.stereographic import PoincareBall
 
 from lib.lorentz.layers import LorentzMLR
-from lib.poincare.layers import UnidirectionalPoincareMLR
 
 from lib.models.resnet import (
-    resnet18,
-    resnet50,
-    Lorentz_resnet18,
-    Lorentz_resnet50
+    Lorentz_resnet18
 )
 
-EUCLIDEAN_RESNET_MODEL = {
-    18: resnet18,
-    50: resnet50
-}
 
 LORENTZ_RESNET_MODEL = {
     18: Lorentz_resnet18,
-    50: Lorentz_resnet50
 }
 
 RESNET_MODEL = {
-    "euclidean" : EUCLIDEAN_RESNET_MODEL,
     "lorentz" : LORENTZ_RESNET_MODEL,
 }
 
@@ -37,11 +27,6 @@ EUCLIDEAN_DECODER = {
 LORENTZ_DECODER = {
     'mlr' : LorentzMLR
 }
-
-POINCARE_DECODER = {
-    'mlr' : UnidirectionalPoincareMLR
-}
-
 class ResNetClassifier(nn.Module):
     """ Classifier based on ResNet encoder.
     """
@@ -68,10 +53,21 @@ class ResNetClassifier(nn.Module):
             self.decoder = EUCLIDEAN_DECODER[dec_kwargs['type']](dec_kwargs['embed_dim'], dec_kwargs['num_classes'])
         elif dec_type == "lorentz":
             self.dec_manifold = CustomLorentz(k=dec_kwargs["k"], learnable=dec_kwargs['learn_k'])
-            self.decoder = LORENTZ_DECODER[dec_kwargs['type']](self.dec_manifold, dec_kwargs['embed_dim']+1, dec_kwargs['num_classes'])
-        elif dec_type == "poincare":
-            self.dec_manifold = PoincareBall(c=dec_kwargs["k"], learnable=dec_kwargs['learn_k'])
-            self.decoder = POINCARE_DECODER[dec_kwargs['type']](dec_kwargs['embed_dim'], dec_kwargs['num_classes'], True, self.dec_manifold)
+            if dec_kwargs.get("mlr", "ours") == "theirs":
+                self.decoder = LORENTZ_DECODER[dec_kwargs['type']](
+                    self.dec_manifold,
+                    dec_kwargs['embed_dim'] + 1,
+                    dec_kwargs['num_classes']
+                )
+            else:
+                self.decoder = LorentzFullyConnectedNew(
+                    manifold=self.dec_manifold,
+                    in_features=dec_kwargs['embed_dim'] + 1,
+                    out_features=dec_kwargs['num_classes'] + 1,
+                    init_method=dec_kwargs.get("init_method", "eye"),
+                    do_mlr=True,
+                    mlr_std_mult=dec_kwargs.get("mlr_std_mult", 1.0),
+                )
         else:
             raise RuntimeError(f"Decoder manifold {dec_type} not available...")
         

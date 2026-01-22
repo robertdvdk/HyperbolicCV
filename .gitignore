@@ -19,3 +19,5 @@
 *.wandb
 code/wandb/*
 wandb/*
+*.yml
+*.yaml

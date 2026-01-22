@@ -24,8 +24,8 @@ from tqdm import tqdm
 from utils.initialize import select_dataset, select_model, load_model_checkpoint
 from lib.utils.visualize import visualize_embeddings
 from train import evaluate
-from lib import layer_config
 from lib.utils.utils import AverageMeter, accuracy
+from autoattack import AutoAttack
 
 def getArguments():
     """ Parses command-line options. """
@@ -40,7 +40,8 @@ def getArguments():
                             "test_accuracy",
                             "visualize_embeddings",
                             "fgsm",
-                            "pgd"
+                            "pgd",
+                            "autoattack",
                         ],
                         help = "Select the testing mode.")
     
@@ -112,8 +113,6 @@ def main(args):
     torch.cuda.set_device(device)
     torch.cuda.empty_cache()
 
-    layer_config.LINEAR_METHOD = args.linear_method
-    layer_config.BATCHNORM_MODE = args.batchnorm
     print(f"Layer config: linear_method={args.linear_method}, batchnorm={args.batchnorm}")
 
     print("Arguments:")
@@ -138,6 +137,19 @@ def main(args):
 
     model = DataParallel(model, device_ids=args.device)
     model.eval()
+
+    if args.mode == "autoattack":
+        adversary = AutoAttack(model, norm='Linf', eps=8/255, version='standard', device=device)
+        x_test, y_test = [], []
+        for i, (x, y) in enumerate(test_loader):
+            x_test.append(x)
+            y_test.append(y)
+            if i == 5:
+                break
+        x_test = torch.cat(x_test, dim=0)
+        y_test = torch.cat(y_test, dim=0)
+
+        x_adv = adversary.run_standard_evaluation(x_test, y_test, bs=128)
 
     if args.mode=="test_accuracy":
         print("Testing accuracy of model...")
@@ -181,7 +193,7 @@ def adversarial_attack(attack, model, device, data_loader, epsilons=[0.8/255, 1.
         if attack=="fgsm":
             iters=1
         elif attack=="pgd":
-            iters=7
+            iters=10
         else:
             raise RuntimeError(f"Attack {attack} is not implemented.")
         

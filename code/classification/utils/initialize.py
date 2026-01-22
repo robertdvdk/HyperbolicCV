@@ -62,7 +62,9 @@ def select_model(img_dim, num_classes, args):
         'embed_dim' : args.embedding_dim,
         'num_classes' : num_classes,
         'bias' : args.encoder_manifold=="lorentz",
-        'init_method' : args.init_method
+        'init_method' : args.init_method,
+        'linear_method' : getattr(args, "linear_method", "ours"),
+        'batchnorm_impl' : getattr(args, "batchnorm", "manifold"),
     }
 
     if args.encoder_manifold=="lorentz":
@@ -75,7 +77,10 @@ def select_model(img_dim, num_classes, args):
         'k' : args.decoder_k,
         'learn_k' : args.learn_k,
         'type' : 'mlr',
-        'clip_r' : args.clip_features
+        'clip_r' : args.clip_features,
+        'mlr' : args.mlr,
+        'init_method' : args.init_method,
+        'mlr_std_mult' : args.mlr_std_mult
     }
 
     model = ResNetClassifier(

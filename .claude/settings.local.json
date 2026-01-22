@@ -4,7 +4,10 @@
       "Bash(tree:*)",
       "Bash(ls:*)",
       "WebSearch",
-      "WebFetch(domain:github.com)"
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:arxiv.org)",
+      "WebFetch(domain:zjysteven.github.io)",
+      "Bash(python:*)"
     ]
   }
 }
