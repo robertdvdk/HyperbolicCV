@@ -15,16 +15,15 @@ ulimit -c 0
 # Activate your environment (edit as needed)
 conda activate HCNN
 
-echo "Starting 4 wandb agents for sweep: ${SWEEP_ID}"
+echo "Starting 4 wandb agents for sweep: robert-vdklis/HyperbolicCV-code_classification/d1guvaaq"
 echo "GPUs available: $(nvidia-smi -L)"
 
 # Launch 4 agents, one per GPU
 for i in 0 1 2 3; do
-    CUDA_VISIBLE_DEVICES=$i wandb agent "${SWEEP_ID}" &
+    CUDA_VISIBLE_DEVICES=$i wandb agent "robert-vdklis/HyperbolicCV-code_classification/d1guvaaq" &
     echo "Started agent $i on GPU $i (PID: $!)"
 done
 
 # Wait for all background jobs to complete
 wait
-
 echo "All agents finished"
