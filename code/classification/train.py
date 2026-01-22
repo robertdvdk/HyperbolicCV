@@ -186,6 +186,11 @@ def main(args):
     best_acc = 0.0
     best_epoch = 0
     with wandb.init(project=project, config=vars(args)) as run:
+        run.define_metric("epoch")
+        run.define_metric("train/acc@1", step_metric="epoch")
+        run.define_metric("train/loss", step_metric="epoch")
+        run.define_metric("val/acc@1", step_metric="epoch")
+        run.define_metric("val/loss", step_metric="epoch")
         for epoch in range(start_epoch, args.num_epochs):
             model.train()
 
@@ -232,7 +237,14 @@ def main(args):
                     "Epoch {}/{}: Loss={:.4f}, Acc@1={:.4f}, Acc@5={:.4f}, Validation: Loss={:.4f}, Acc@1={:.4f}, Acc@5={:.4f}".format(
                         epoch + 1, args.num_epochs, losses.avg, acc1.avg, acc5.avg, loss_val, acc1_val, acc5_val))
 
-                run.log({"train/acc@1": acc1.avg, "train/loss": losses.avg, "val/acc@1": acc1_val, "val/loss": loss_val})
+                run.log({
+                    "epoch": epoch + 1,
+                    "train/acc@1": acc1.avg,
+                    "train/loss": losses.avg,
+                    "val/acc@1": acc1_val,
+                    "val/loss": loss_val,
+                })
+                run.summary["best_val/acc@1"] = max(run.summary.get("best_val/acc@1", 0.0), acc1_val)
 
                 # Testing for best model
                 if acc1_val > best_acc:
