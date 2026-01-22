@@ -151,7 +151,6 @@ dependencies:
   - zstd=1.5.7=h11fc155_0
   - pip:
       - annotated-types==0.7.0
-      - autoattack==0.1
       - click==8.1.8
       - configargparse==1.5.3
       - contourpy==1.1.1
@@ -184,4 +183,3 @@ dependencies:
       - umap-learn==0.5.3
       - wandb==0.23.1
       - zipp==3.20.2
-prefix: /local/home/rvander/miniconda3/envs/HCNN
