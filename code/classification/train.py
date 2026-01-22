@@ -185,7 +185,7 @@ def main(args):
 
     best_acc = 0.0
     best_epoch = 0
-    with wandb.init(project=project, name=args.exp_name, config=vars(args)) as run:
+    with wandb.init(project=project, config=vars(args)) as run:
         for epoch in range(start_epoch, args.num_epochs):
             model.train()
 
