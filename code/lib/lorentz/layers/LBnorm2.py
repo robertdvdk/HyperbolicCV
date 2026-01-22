@@ -87,8 +87,9 @@ class LorentzBatchNorm2d(nn.Module):
         x_flat = self._to_flat(x)  # [N, C]
         mean_flat = mean.view(1, C).expand(x_flat.shape[0], -1)
         
-        # Origin point
-        origin = self.manifold.origin(C).unsqueeze(0).expand(x_flat.shape[0], -1)
+        # Origin point (avoid ManifoldTensor wrapper for torch.compile)
+        origin = torch.zeros_like(mean_flat)
+        origin[:, 0] = torch.sqrt(self.manifold.k).to(origin)
         
         # 1. Log map: get tangent vector at mean pointing to x
         v_at_mean = self.manifold.logmap(mean_flat, x_flat)  # [N, C]
