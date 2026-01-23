@@ -1,7 +1,7 @@
 # python code/classification/train.py -c classification/config/L-ResNet18_fullytheirs.txt
 
 # Output settings
-exp_name = L-ResNet18_ourlinear_warmup_wd1e3
+exp_name = L-ResNet18_ourlinear_warmup_wd1e3_theirs
 output_dir = classification/output
 
 # General settings
@@ -38,8 +38,8 @@ dataset = CIFAR-100 # CIFAR-10 or Tiny-ImageNet
 train_subset_fraction = 1.0
 val_fraction = 0.1
 
-mlr_std_mult = 2.5
-mlr = ours
-batchnorm = euclidean
+mlr = theirs
+batchnorm = manifold
 linear_method = ours
-init_method = lorentz_kaiming
+init_method = kaiming
+compile = True

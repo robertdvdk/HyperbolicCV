@@ -185,7 +185,7 @@ def main(args):
 
     best_acc = 0.0
     best_epoch = 0
-    with wandb.init(project=project, config=vars(args)) as run:
+    with wandb.init(project=project, config=vars(args), name=args.exp_name) as run:
         run.define_metric("epoch")
         run.define_metric("train/acc@1", step_metric="epoch")
         run.define_metric("train/loss", step_metric="epoch")

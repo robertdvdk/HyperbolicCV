@@ -41,11 +41,9 @@ class LorentzFullyConnectedNew(nn.Module):
         if init_method in [None, "old"]:
             return "eye"
         return init_method
+    
 
     def reset_parameters(self, reset_params, a_default, mlr_std_mult=1.0):
-        in_features, out_features = self.U.shape
-            
-
         in_features, out_features = self.U.shape
         if reset_params == "eye":
             scale = 0.5
@@ -63,25 +61,10 @@ class LorentzFullyConnectedNew(nn.Module):
                 )
             self.a.data.fill_(a_default)
 
-        elif reset_params == "lorentz_kaiming":
-            # For Lorentz models: divide std by 0.5 to account for time coordinate
-            std = (1.0 / in_features) ** 0.5
-            with torch.no_grad():
-                self.U.data.normal_(0, std)
-            self.a.data.fill_(a_default)
-
-        elif reset_params == "mlr":
-            std = (5.0 / in_features) ** 0.5 * mlr_std_mult
-            with torch.no_grad():
-                self.U.data.normal_(0, std)
-            self.a.data.fill_(a_default)
-
-        else:
-            raise KeyError(f"Unknown reset_params value: {reset_params}")
 
     def create_spacelike_vector(self):
         U_norm = self.U.norm(dim=0, keepdim=True)
-        U_norm_sqrt_k_b = self.manifold.k.sqrt() * U_norm * self.a
+        U_norm_sqrt_k_b = self.manifold.k.sqrt() * self.a / U_norm
         time = -U_norm * torch.sinh(U_norm_sqrt_k_b)
         space = torch.cosh(U_norm_sqrt_k_b) * self.U
         return torch.cat([time, space], dim=0)
